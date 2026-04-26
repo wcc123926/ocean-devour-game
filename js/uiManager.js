@@ -135,6 +135,7 @@ window.UIManager = {
         window.NotificationManager.init();
         
         this.bindDifficultySelector();
+        this.bindControlSelector();
         this.checkMobileDevice();
     },
     
@@ -158,10 +159,36 @@ window.UIManager = {
         console.log('Difficulty selected:', difficulty);
     },
     
+    bindControlSelector: function() {
+        const buttons = document.querySelectorAll('.control-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.selectControlMode(e.target.closest('.control-btn'));
+            });
+        });
+    },
+    
+    selectControlMode: function(button) {
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        button.classList.add('active');
+        
+        const controlMode = button.dataset.control;
+        if (controlMode === 'mouse') {
+            window.GameStatus.controlMode = window.ControlMode.MOUSE;
+        } else if (controlMode === 'keyboard') {
+            window.GameStatus.controlMode = window.ControlMode.KEYBOARD;
+        }
+        console.log('Control mode selected:', window.GameStatus.controlMode);
+    },
+    
     checkMobileDevice: function() {
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile || window.innerWidth <= 768) {
             document.getElementById('mobileControls').classList.remove('hidden');
+            document.getElementById('controlSelector').classList.add('hidden');
+            window.GameStatus.controlMode = window.ControlMode.TOUCH;
         }
     },
     
@@ -325,13 +352,36 @@ window.UIManager = {
         
         document.getElementById('summaryScore').textContent = window.GameStatus.score;
         document.getElementById('summaryFish').textContent = window.GameStatus.fishEaten;
+        document.getElementById('summaryExplosions').textContent = window.GameStatus.fishKilledByExplosion;
         document.getElementById('summaryStage').textContent = window.GameStatus.stagesReached;
         document.getElementById('summaryTime').textContent = window.GameStatus.formatTime(window.GameStatus.gameTime);
         document.getElementById('summaryPowerups').textContent = window.GameStatus.powerupsCollected;
         document.getElementById('summarySize').textContent = Math.round(window.GameStatus.maxSize);
         
         const stage = window.GameUtils.getCurrentStageBySize(window.GameStatus.maxSize);
-        document.getElementById('gameOverReason').textContent = `最高达到: ${stage.name}，被更大的鱼吃掉了！`;
+        let reasonText = '';
+        let deathCauseText = '';
+        
+        if (window.GameStatus.deathCause === window.DeathCause.EXPLOSION) {
+            reasonText = `最高达到: ${stage.name}，被海底爆炸消灭了！`;
+            deathCauseText = '💥 死亡原因：海底爆炸';
+        } else if (window.GameStatus.deathCause === window.DeathCause.EATEN) {
+            reasonText = `最高达到: ${stage.name}，被更大的鱼吃掉了！`;
+            deathCauseText = '🐟 死亡原因：被大鱼吃掉';
+        } else {
+            reasonText = `最高达到: ${stage.name}`;
+            deathCauseText = '';
+        }
+        
+        document.getElementById('gameOverReason').textContent = reasonText;
+        
+        const deathCauseElement = document.getElementById('deathCause');
+        if (deathCauseText) {
+            deathCauseElement.textContent = deathCauseText;
+            deathCauseElement.classList.remove('hidden');
+        } else {
+            deathCauseElement.classList.add('hidden');
+        }
         
         document.getElementById('gameOverOverlay').classList.remove('hidden');
         document.getElementById('mobileControls').classList.add('hidden');
@@ -444,6 +494,10 @@ window.Renderer = {
     render: function(ctx, game) {
         ctx.clearRect(0, 0, window.CONFIG.canvasWidth, window.CONFIG.canvasHeight);
         this.renderBackground(ctx);
+
+        if (game.explosionManager) {
+            game.explosionManager.render(ctx);
+        }
 
         if (game.spawnManager) {
             game.spawnManager.render(ctx);
