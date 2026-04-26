@@ -22,7 +22,7 @@ window.Player = class Player {
         this.showPlayer = true;
     }
 
-    update(deltaTime, mouse, canvas) {
+    update(deltaTime, mouse, canvas, keys) {
         if (this.speedBoostDuration > 0) {
             this.speedBoostDuration -= deltaTime * 1000;
             if (this.speedBoostDuration <= 0) {
@@ -58,15 +58,6 @@ window.Player = class Player {
             }
         }
 
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const targetAngle = Math.atan2(dy, dx);
-
-        let angleDiff = targetAngle - this.direction;
-        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-        this.direction += angleDiff * 0.1;
-
         let currentSpeed = this.baseSpeed;
         
         const sizePenalty = 1 - (this.size - window.CONFIG.playerBaseSize) / window.CONFIG.playerMaxSize * 0.4;
@@ -78,14 +69,53 @@ window.Player = class Player {
 
         this.currentSpeed = currentSpeed;
 
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > 5) {
-            this.x += Math.cos(this.direction) * currentSpeed;
-            this.y += Math.sin(this.direction) * currentSpeed;
-            
-            if (this.hasSpeedBoost && currentSpeed > this.baseSpeed * 1.2) {
-                this.addSpeedTrail();
+        const controlMode = window.GameStatus.controlMode;
+        let isMoving = false;
+
+        if (controlMode === window.ControlMode.KEYBOARD && keys) {
+            let dx = 0;
+            let dy = 0;
+
+            if (keys['w'] || keys['arrowup']) dy -= 1;
+            if (keys['s'] || keys['arrowdown']) dy += 1;
+            if (keys['a'] || keys['arrowleft']) dx -= 1;
+            if (keys['d'] || keys['arrowright']) dx += 1;
+
+            if (dx !== 0 || dy !== 0) {
+                const length = Math.sqrt(dx * dx + dy * dy);
+                dx /= length;
+                dy /= length;
+
+                const targetAngle = Math.atan2(dy, dx);
+                let angleDiff = targetAngle - this.direction;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                this.direction += angleDiff * 0.15;
+
+                this.x += dx * currentSpeed;
+                this.y += dy * currentSpeed;
+                isMoving = true;
             }
+        } else {
+            const dx = mouse.x - this.x;
+            const dy = mouse.y - this.y;
+            const targetAngle = Math.atan2(dy, dx);
+
+            let angleDiff = targetAngle - this.direction;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            this.direction += angleDiff * 0.1;
+
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > 5) {
+                this.x += Math.cos(this.direction) * currentSpeed;
+                this.y += Math.sin(this.direction) * currentSpeed;
+                isMoving = true;
+            }
+        }
+
+        if (isMoving && this.hasSpeedBoost && currentSpeed > this.baseSpeed * 1.2) {
+            this.addSpeedTrail();
         }
 
         this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));

@@ -249,6 +249,64 @@ body {
   animation: shieldWarningPulse 0.8s ease-in-out infinite;
 }
 
+.explosion-warning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 25;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border-radius: 15px;
+  padding: 20px 30px;
+  border: 2px solid rgba(255, 87, 34, 0.5);
+  box-shadow: 0 0 30px rgba(255, 87, 34, 0.3);
+  animation: explosionWarningPulse 1s ease-in-out infinite;
+}
+
+.explosion-warning.hidden {
+  display: none;
+}
+
+.explosion-countdown {
+  font-size: 64px;
+  font-weight: bold;
+  color: #ff5722;
+  text-shadow: 0 0 20px rgba(255, 87, 34, 0.8),
+               0 0 40px rgba(255, 87, 34, 0.5);
+  margin-bottom: 10px;
+  animation: countdownPulse 0.5s ease-in-out infinite;
+}
+
+.explosion-label {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff9800;
+  text-shadow: 0 0 10px rgba(255, 152, 0, 0.6);
+}
+
+@keyframes explosionWarningPulse {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(255, 87, 34, 0.3);
+    border-color: rgba(255, 87, 34, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(255, 87, 34, 0.6);
+    border-color: rgba(255, 87, 34, 0.8);
+  }
+}
+
+@keyframes countdownPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 @keyframes popIn {
   0% {
     transform: scale(0.5);
@@ -334,8 +392,20 @@ body {
 .overlay-subtitle {
   font-size: 20px;
   color: #fff;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   opacity: 0.9;
+}
+
+.death-cause {
+  font-size: 16px;
+  color: #ff5722;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(255, 87, 34, 0.5);
+}
+
+.death-cause.hidden {
+  display: none;
 }
 
 .difficulty-selector {
@@ -398,6 +468,63 @@ body {
 }
 
 .diff-desc {
+  color: #90caf9;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.control-selector {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.control-selector.hidden {
+  display: none;
+}
+
+.control-options {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.control-btn {
+  background: rgba(100, 181, 246, 0.2);
+  border: 2px solid rgba(100, 181, 246, 0.4);
+  border-radius: 12px;
+  padding: 15px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  min-width: 140px;
+}
+
+.control-btn:hover {
+  background: rgba(100, 181, 246, 0.3);
+  border-color: rgba(100, 181, 246, 0.7);
+  transform: translateY(-2px);
+}
+
+.control-btn.active {
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.4) 0%, rgba(33, 150, 243, 0.4) 100%);
+  border-color: #64b5f6;
+  box-shadow: 0 0 20px rgba(100, 181, 246, 0.5);
+}
+
+.control-btn[data-control="keyboard"].active {
+  border-color: #9c27b0;
+  box-shadow: 0 0 20px rgba(156, 39, 176, 0.5);
+}
+
+.ctrl-name {
+  color: #fff;
+  font-size: 15px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.ctrl-desc {
   color: #90caf9;
   font-size: 11px;
   opacity: 0.8;
@@ -820,6 +947,15 @@ body {
   }
 
   .difficulty-btn {
+    min-width: 200px;
+  }
+  
+  .control-options {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .control-btn {
     min-width: 200px;
   }
 

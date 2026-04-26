@@ -4,6 +4,18 @@ window.Difficulty = {
     HARD: 'hard'
 };
 
+window.ControlMode = {
+    MOUSE: 'mouse',
+    KEYBOARD: 'keyboard',
+    TOUCH: 'touch'
+};
+
+window.DeathCause = {
+    EATEN: 'eaten',
+    EXPLOSION: 'explosion',
+    UNKNOWN: 'unknown'
+};
+
 window.DifficultyConfig = {
     easy: {
         name: '简单',
@@ -106,4 +118,14 @@ window.CONFIG = {
   ],
 
   stageRequirements: [0, 100, 300, 600, 1000],
+
+  explosion: {
+    enabled: true,
+    minInterval: 15000,
+    maxInterval: 30000,
+    countdownTime: 5000,
+    minRadius: 100,
+    maxRadius: 200,
+    warningPulseRate: 0.5
+  }
 };
