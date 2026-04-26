@@ -35,19 +35,54 @@ window.GameUtils = {
 };
 
 window.NotificationManager = {
-    activeNotifications: [],
+    _notificationTimeout: null,
+    _isInitialized: false,
+    
+    init: function() {
+        if (this._isInitialized) return;
+        this._isInitialized = true;
+        this.hideAll();
+    },
+    
+    hideAll: function() {
+        this.hideNotification();
+        this.hideShieldWarning();
+    },
     
     show: function(text, subtitle, duration = 2000) {
+        if (!this._isInitialized) {
+            this.init();
+        }
+        
         const notification = document.getElementById('screenNotification');
+        if (!notification) return;
+        
+        if (this._notificationTimeout) {
+            clearTimeout(this._notificationTimeout);
+            this._notificationTimeout = null;
+        }
+        
         notification.innerHTML = `
             <div class="notification-text">${text}</div>
             ${subtitle ? `<div class="notification-subtitle">${subtitle}</div>` : ''}
         `;
         notification.classList.remove('hidden');
         
-        setTimeout(() => {
-            notification.classList.add('hidden');
+        this._notificationTimeout = setTimeout(() => {
+            this.hideNotification();
         }, duration);
+    },
+    
+    hideNotification: function() {
+        const notification = document.getElementById('screenNotification');
+        if (notification) {
+            notification.classList.add('hidden');
+            notification.innerHTML = '';
+        }
+        if (this._notificationTimeout) {
+            clearTimeout(this._notificationTimeout);
+            this._notificationTimeout = null;
+        }
     },
     
     showSpeedBoost: function() {
@@ -68,17 +103,22 @@ window.NotificationManager = {
     
     showShieldWarning: function(remaining) {
         const warning = document.getElementById('shieldWarning');
-        if (remaining <= 3) {
+        if (!warning) return;
+        
+        if (remaining <= 3 && remaining > 0) {
             warning.innerHTML = `<div class="warning-text">护盾即将消失！${remaining}s</div>`;
             warning.classList.remove('hidden');
         } else {
-            warning.classList.add('hidden');
+            this.hideShieldWarning();
         }
     },
     
     hideShieldWarning: function() {
         const warning = document.getElementById('shieldWarning');
-        warning.classList.add('hidden');
+        if (warning) {
+            warning.classList.add('hidden');
+            warning.innerHTML = '';
+        }
     }
 };
 
@@ -91,6 +131,9 @@ window.UIManager = {
         this.previousStageIndex = 0;
         this.previousSpeedBoost = false;
         this.previousShield = false;
+        
+        window.NotificationManager.init();
+        
         this.bindDifficultySelector();
         this.checkMobileDevice();
     },
