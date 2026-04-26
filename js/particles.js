@@ -222,10 +222,14 @@ window.Particle = class Particle {
 window.ParticleSystem = class ParticleSystem {
     constructor() {
         this.particles = [];
+        this.maxParticles = 80;
     }
 
     createParticles(x, y, color, count) {
-        for (let i = 0; i < count; i++) {
+        const actualCount = Math.min(count, this.maxParticles - this.particles.length);
+        if (actualCount <= 0) return;
+        
+        for (let i = 0; i < actualCount; i++) {
             this.particles.push(new window.Particle(x, y, color));
         }
     }

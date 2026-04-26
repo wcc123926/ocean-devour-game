@@ -13,49 +13,48 @@ window.CollisionManager = class CollisionManager {
         const enemies = this.game.spawnManager.enemyFish;
         const diffConfig = window.GameStatus.getDifficultyConfig();
         
-        enemies.forEach((fish, fishIndex) => {
-            if (player.collidesWith(fish)) {
-                const playerSize = player.size;
-                const enemySize = fish.size;
-                const sizeRatio = enemySize / playerSize;
-                
-                console.log('Collision detected!');
-                console.log('  Player size:', playerSize);
-                console.log('  Enemy size:', enemySize);
-                console.log('  Size ratio (enemy/player):', sizeRatio);
-                console.log('  Eatable ratio:', diffConfig.eatableRatio);
-                console.log('  Danger ratio:', diffConfig.dangerRatio);
+        const playerX = player.x;
+        const playerY = player.y;
+        const playerSize = player.size;
+        const eatableRatio = diffConfig.eatableRatio;
+        const dangerRatio = diffConfig.dangerRatio;
+        
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const fish = enemies[i];
+            
+            const dx = fish.x - playerX;
+            const dy = fish.y - playerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const minDistance = (playerSize + fish.size) * 0.8;
+            
+            if (distance < minDistance) {
+                const sizeRatio = fish.size / playerSize;
 
-                if (sizeRatio < diffConfig.eatableRatio) {
-                    console.log('  => Can eat! (ratio < eatableRatio)');
-                    this.eatFish(fish, fishIndex);
-                } else if (sizeRatio > diffConfig.dangerRatio) {
-                    console.log('  => DANGER! (ratio > dangerRatio)');
-                    console.log('  Has shield:', player.hasShield);
+                if (sizeRatio < eatableRatio) {
+                    this.eatFish(fish, i);
+                } else if (sizeRatio > dangerRatio) {
                     if (player.hasShield) {
-                        console.log('  => Shield consumed, game continues');
-                        this.handleShieldCollision(player, fishIndex);
+                        this.handleShieldCollision(player, i);
                     } else {
-                        console.log('  => No shield, game over!');
                         window.GameStatus.setDeathCause(window.DeathCause.EATEN);
                         this.game.gameOver();
+                        return;
                     }
-                } else {
-                    console.log('  => Neutral collision (between ratios), no effect');
                 }
             }
-        });
+        }
     }
 
     checkPlayerPowerupCollisions() {
         const player = this.game.player;
         const powerups = this.game.spawnManager.powerups;
         
-        powerups.forEach((powerup, index) => {
+        for (let i = powerups.length - 1; i >= 0; i--) {
+            const powerup = powerups[i];
             if (player.collidesWith(powerup)) {
-                this.collectPowerup(powerup, index);
+                this.collectPowerup(powerup, i);
             }
-        });
+        }
     }
 
     eatFish(fish, fishIndex) {
