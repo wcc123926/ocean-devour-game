@@ -426,16 +426,7 @@ window.ExplosionManager = class ExplosionManager {
         
         this.hideWarningUI();
         
-        const fishKilled = this.checkExplosionDamage();
-        
-        window.GameStatus.addFishKilledByExplosion(fishKilled);
-        
-        this.createExplosionEffect();
-        
-        console.log('Explosion triggered! Fish killed:', fishKilled);
-    }
-
-    checkExplosionDamage() {
+        let playerKilled = false;
         let fishKilled = 0;
         
         if (this.game.player) {
@@ -445,12 +436,7 @@ window.ExplosionManager = class ExplosionManager {
             
             if (distance <= this.explosionRadius) {
                 window.GameStatus.setDeathCause(window.DeathCause.EXPLOSION);
-                console.log('Player killed by explosion!');
-                setTimeout(() => {
-                    this.game.gameOver();
-                }, 100);
-            } else {
-                window.GameStatus.setDeathCause(window.DeathCause.EATEN);
+                playerKilled = true;
             }
         }
         
@@ -467,10 +453,6 @@ window.ExplosionManager = class ExplosionManager {
                 if (distance <= this.explosionRadius) {
                     indicesToRemove.push(i);
                     fishKilled++;
-                    
-                    if (this.game.particleSystem) {
-                        this.game.particleSystem.createParticles(fish.x, fish.y, '#ff5722', 10);
-                    }
                 }
             }
             
@@ -479,17 +461,69 @@ window.ExplosionManager = class ExplosionManager {
             });
         }
         
+        window.GameStatus.addFishKilledByExplosion(fishKilled);
+        
+        console.log('Explosion triggered! Fish killed:', fishKilled, 'Player killed:', playerKilled);
+        
+        if (playerKilled) {
+            this.game.gameOver();
+        } else {
+            this.createExplosionEffect();
+        }
+    }
+
+    checkExplosionDamage() {
+        let fishKilled = 0;
+        let playerKilled = false;
+        
+        if (this.game.player) {
+            const dx = this.game.player.x - this.explosionX;
+            const dy = this.game.player.y - this.explosionY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance <= this.explosionRadius) {
+                window.GameStatus.setDeathCause(window.DeathCause.EXPLOSION);
+                playerKilled = true;
+                console.log('Player killed by explosion!');
+            }
+        }
+        
+        if (this.game.spawnManager) {
+            const enemies = this.game.spawnManager.enemyFish;
+            const indicesToRemove = [];
+            
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const fish = enemies[i];
+                const dx = fish.x - this.explosionX;
+                const dy = fish.y - this.explosionY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance <= this.explosionRadius) {
+                    indicesToRemove.push(i);
+                    fishKilled++;
+                }
+            }
+            
+            indicesToRemove.forEach(index => {
+                this.game.spawnManager.removeFish(index);
+            });
+        }
+        
+        if (playerKilled) {
+            this.game.gameOver();
+        }
+        
         return fishKilled;
     }
 
     createExplosionEffect() {
         if (!this.game.particleSystem) return;
         
-        const particleCount = 50;
+        const particleCount = 20;
         for (let i = 0; i < particleCount; i++) {
             const angle = (Math.PI * 2 / particleCount) * i;
-            const speed = 5 + Math.random() * 10;
-            const size = 8 + Math.random() * 12;
+            const speed = 3 + Math.random() * 5;
+            const size = 5 + Math.random() * 8;
             
             this.game.particleSystem.particles.push(new window.Particle(
                 this.explosionX,
@@ -499,36 +533,21 @@ window.ExplosionManager = class ExplosionManager {
                     vx: Math.cos(angle) * speed,
                     vy: Math.sin(angle) * speed,
                     size: size,
-                    lifetime: 800 + Math.random() * 400
+                    lifetime: 500 + Math.random() * 300
                 }
             ));
         }
         
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 3; i++) {
             this.game.particleSystem.particles.push(new window.Particle(
                 this.explosionX,
                 this.explosionY,
                 '#ffd700',
                 {
                     type: 'ring',
-                    size: 50 + i * 40,
-                    lifetime: 400 + i * 100,
+                    size: 40 + i * 30,
+                    lifetime: 300 + i * 80,
                     fadeIn: 0.1
-                }
-            ));
-        }
-        
-        for (let i = 0; i < 20; i++) {
-            this.game.particleSystem.particles.push(new window.Particle(
-                this.explosionX,
-                this.explosionY,
-                '#ffeb3b',
-                {
-                    type: 'star',
-                    vx: (Math.random() - 0.5) * 15,
-                    vy: (Math.random() - 0.5) * 15,
-                    size: 6 + Math.random() * 8,
-                    lifetime: 600 + Math.random() * 400
                 }
             ));
         }

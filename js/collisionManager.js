@@ -37,6 +37,7 @@ window.CollisionManager = class CollisionManager {
                         this.handleShieldCollision(player, fishIndex);
                     } else {
                         console.log('  => No shield, game over!');
+                        window.GameStatus.setDeathCause(window.DeathCause.EATEN);
                         this.game.gameOver();
                     }
                 } else {
