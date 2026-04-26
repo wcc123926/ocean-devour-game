@@ -34,7 +34,94 @@ window.GameUtils = {
     }
 };
 
+window.NotificationManager = {
+    activeNotifications: [],
+    
+    show: function(text, subtitle, duration = 2000) {
+        const notification = document.getElementById('screenNotification');
+        notification.innerHTML = `
+            <div class="notification-text">${text}</div>
+            ${subtitle ? `<div class="notification-subtitle">${subtitle}</div>` : ''}
+        `;
+        notification.classList.remove('hidden');
+        
+        setTimeout(() => {
+            notification.classList.add('hidden');
+        }, duration);
+    },
+    
+    showSpeedBoost: function() {
+        this.show('⚡ 加速！', '移动速度提升！', 1500);
+    },
+    
+    showShield: function() {
+        this.show('🛡️ 护盾激活！', '可以抵挡一次伤害', 1500);
+    },
+    
+    showStageUp: function(stageName, size) {
+        this.show(`🎉 进化！`, `升级为 ${stageName} (${size})`, 2500);
+    },
+    
+    showEat: function(points) {
+        this.show(`+${points} 分`, '', 800);
+    },
+    
+    showShieldWarning: function(remaining) {
+        const warning = document.getElementById('shieldWarning');
+        if (remaining <= 3) {
+            warning.innerHTML = `<div class="warning-text">护盾即将消失！${remaining}s</div>`;
+            warning.classList.remove('hidden');
+        } else {
+            warning.classList.add('hidden');
+        }
+    },
+    
+    hideShieldWarning: function() {
+        const warning = document.getElementById('shieldWarning');
+        warning.classList.add('hidden');
+    }
+};
+
 window.UIManager = {
+    previousStageIndex: 0,
+    previousSpeedBoost: false,
+    previousShield: false,
+    
+    init: function() {
+        this.previousStageIndex = 0;
+        this.previousSpeedBoost = false;
+        this.previousShield = false;
+        this.bindDifficultySelector();
+        this.checkMobileDevice();
+    },
+    
+    bindDifficultySelector: function() {
+        const buttons = document.querySelectorAll('.difficulty-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.selectDifficulty(e.target.closest('.difficulty-btn'));
+            });
+        });
+    },
+    
+    selectDifficulty: function(button) {
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        button.classList.add('active');
+        
+        const difficulty = button.dataset.difficulty;
+        window.GameStatus.difficulty = difficulty;
+        console.log('Difficulty selected:', difficulty);
+    },
+    
+    checkMobileDevice: function() {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile || window.innerWidth <= 768) {
+            document.getElementById('mobileControls').classList.remove('hidden');
+        }
+    },
+    
     updateUI: function() {
         const game = window.gameInstance;
         if (!game) return;
@@ -42,42 +129,116 @@ window.UIManager = {
         document.getElementById('scoreValue').textContent = window.GameStatus.score;
 
         const stage = window.GameUtils.getCurrentStage();
-        document.getElementById('stageValue').textContent = `${stage.index + 1} - ${stage.name}`;
+        document.getElementById('stageValue').textContent = stage.name;
+        
+        const diffConfig = window.GameStatus.getDifficultyConfig();
+        document.getElementById('difficultyValue').textContent = diffConfig.name;
+
+        document.getElementById('timeValue').textContent = window.GameStatus.formatTime(window.GameStatus.gameTime);
+
+        this.updateGoalPanel(stage);
 
         const progress = window.GameUtils.getProgress();
         document.getElementById('progressBar').style.width = `${progress}%`;
+        document.getElementById('progressText').textContent = `${Math.round(progress)}%`;
 
         if (game.player) {
-            const speedLevel = game.player.getSpeedLevel();
-            const speedRatio = speedLevel.ratio;
-            const speedPercent = Math.min(100, Math.max(0, (speedRatio - 0.5) * 100));
-            
-            document.getElementById('speedBarFill').style.width = `${speedPercent}%`;
-            document.getElementById('speedLevelText').textContent = speedLevel.name;
-            document.getElementById('speedLevelText').style.color = speedLevel.color;
-
-            const speedIndicator = document.getElementById('speedIndicator');
-            const speedDuration = document.getElementById('speedDuration');
-            
-            if (game.player.hasSpeedBoost) {
-                speedIndicator.classList.add('active');
-                speedDuration.textContent = `${Math.ceil(game.player.speedBoostDuration / 1000)}s`;
-            } else {
-                speedIndicator.classList.remove('active');
-                speedDuration.textContent = '--';
-            }
-
-            const shieldIndicator = document.getElementById('shieldIndicator');
-            const shieldDuration = document.getElementById('shieldDuration');
-            
-            if (game.player.hasShield) {
-                shieldIndicator.classList.add('active');
-                shieldDuration.textContent = `${Math.ceil(game.player.shieldDuration / 1000)}s`;
-            } else {
-                shieldIndicator.classList.remove('active');
-                shieldDuration.textContent = '--';
-            }
+            this.updatePowerupIndicators(game.player);
+            this.checkStageUp(stage);
         }
+    },
+    
+    updateGoalPanel: function(stage) {
+        const nextStageIndex = Math.min(stage.index + 1, window.CONFIG.growthStages.length - 1);
+        const isMaxStage = stage.index === nextStageIndex;
+        
+        const game = window.gameInstance;
+        const currentSize = game && game.player ? Math.round(game.player.size) : stage.minSize;
+        
+        document.getElementById('goalCurrent').innerHTML = `
+            <span class="goal-icon">🐟</span>
+            <span class="goal-text">当前: ${stage.name} (${currentSize})</span>
+        `;
+        
+        if (isMaxStage) {
+            document.getElementById('goalNext').innerHTML = `
+                <span class="goal-icon">👑</span>
+                <span class="goal-text">已达最高阶段！</span>
+            `;
+            document.getElementById('goalNext').style.opacity = '0.7';
+        } else {
+            const nextStage = window.CONFIG.growthStages[nextStageIndex];
+            document.getElementById('goalNext').innerHTML = `
+                <span class="goal-icon">➡️</span>
+                <span class="goal-text">下一: ${nextStage.name} (${nextStage.minSize})</span>
+            `;
+            document.getElementById('goalNext').style.opacity = '1';
+        }
+    },
+    
+    updatePowerupIndicators: function(player) {
+        const speedIndicator = document.getElementById('speedIndicator');
+        const speedDuration = document.getElementById('speedDuration');
+        
+        if (player.hasSpeedBoost) {
+            const remaining = Math.ceil(player.speedBoostDuration / 1000);
+            speedIndicator.classList.add('active');
+            speedDuration.textContent = `${remaining}s`;
+            
+            if (remaining <= 3) {
+                speedIndicator.classList.add('warning');
+                speedDuration.classList.add('warning');
+            } else {
+                speedIndicator.classList.remove('warning');
+                speedDuration.classList.remove('warning');
+            }
+            
+            if (!this.previousSpeedBoost) {
+                window.NotificationManager.showSpeedBoost();
+            }
+        } else {
+            speedIndicator.classList.remove('active', 'warning');
+            speedDuration.classList.remove('warning');
+            speedDuration.textContent = '--';
+        }
+        this.previousSpeedBoost = player.hasSpeedBoost;
+
+        const shieldIndicator = document.getElementById('shieldIndicator');
+        const shieldDuration = document.getElementById('shieldDuration');
+        
+        if (player.hasShield) {
+            const remaining = Math.ceil(player.shieldDuration / 1000);
+            shieldIndicator.classList.add('active');
+            shieldDuration.textContent = `${remaining}s`;
+            
+            if (remaining <= 3) {
+                shieldIndicator.classList.add('warning');
+                shieldDuration.classList.add('warning');
+                window.NotificationManager.showShieldWarning(remaining);
+            } else {
+                shieldIndicator.classList.remove('warning');
+                shieldDuration.classList.remove('warning');
+                window.NotificationManager.hideShieldWarning();
+            }
+            
+            if (!this.previousShield) {
+                window.NotificationManager.showShield();
+            }
+        } else {
+            shieldIndicator.classList.remove('active', 'warning');
+            shieldDuration.classList.remove('warning');
+            shieldDuration.textContent = '--';
+            window.NotificationManager.hideShieldWarning();
+        }
+        this.previousShield = player.hasShield;
+    },
+    
+    checkStageUp: function(currentStage) {
+        if (currentStage.index > this.previousStageIndex) {
+            window.GameStatus.updateStagesReached(currentStage.index);
+            window.NotificationManager.showStageUp(currentStage.name, currentStage.minSize);
+        }
+        this.previousStageIndex = currentStage.index;
     },
 
     showStartOverlay: function() {
@@ -85,6 +246,7 @@ window.UIManager = {
         document.getElementById('gameOverOverlay').classList.add('hidden');
         document.getElementById('pauseOverlay').classList.add('hidden');
         document.getElementById('pauseIndicator').classList.add('hidden');
+        document.getElementById('mobileControls').classList.add('hidden');
     },
 
     hideAllOverlays: function() {
@@ -92,21 +254,44 @@ window.UIManager = {
         document.getElementById('gameOverOverlay').classList.add('hidden');
         document.getElementById('pauseOverlay').classList.add('hidden');
         document.getElementById('pauseIndicator').classList.add('hidden');
+        
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile || window.innerWidth <= 768) {
+            document.getElementById('mobileControls').classList.remove('hidden');
+        }
     },
 
     showPauseOverlay: function() {
         document.getElementById('pauseIndicator').classList.remove('hidden');
         document.getElementById('pauseOverlay').classList.remove('hidden');
+        document.getElementById('mobileControls').classList.add('hidden');
     },
 
     hidePauseOverlay: function() {
         document.getElementById('pauseIndicator').classList.add('hidden');
         document.getElementById('pauseOverlay').classList.add('hidden');
+        
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile || window.innerWidth <= 768) {
+            document.getElementById('mobileControls').classList.remove('hidden');
+        }
     },
 
     showGameOverOverlay: function() {
         document.getElementById('finalScore').textContent = window.GameStatus.score;
+        
+        document.getElementById('summaryScore').textContent = window.GameStatus.score;
+        document.getElementById('summaryFish').textContent = window.GameStatus.fishEaten;
+        document.getElementById('summaryStage').textContent = window.GameStatus.stagesReached;
+        document.getElementById('summaryTime').textContent = window.GameStatus.formatTime(window.GameStatus.gameTime);
+        document.getElementById('summaryPowerups').textContent = window.GameStatus.powerupsCollected;
+        document.getElementById('summarySize').textContent = Math.round(window.GameStatus.maxSize);
+        
+        const stage = window.GameUtils.getCurrentStageBySize(window.GameStatus.maxSize);
+        document.getElementById('gameOverReason').textContent = `最高达到: ${stage.name}，被更大的鱼吃掉了！`;
+        
         document.getElementById('gameOverOverlay').classList.remove('hidden');
+        document.getElementById('mobileControls').classList.add('hidden');
     }
 };
 

@@ -1,14 +1,58 @@
+window.Difficulty = {
+    EASY: 'easy',
+    NORMAL: 'normal',
+    HARD: 'hard'
+};
+
+window.DifficultyConfig = {
+    easy: {
+        name: '简单',
+        description: '敌人较少，速度较慢，成长较快',
+        maxEnemyFish: 10,
+        enemySpeedMultiplier: 0.8,
+        growthMultiplier: 1.3,
+        dangerRatio: 1.25,
+        eatableRatio: 0.8,
+        powerupSpawnRate: 0.008,
+        startupDuration: 8000,
+        shieldDuration: 20000
+    },
+    normal: {
+        name: '普通',
+        description: '标准难度体验',
+        maxEnemyFish: 15,
+        enemySpeedMultiplier: 1.0,
+        growthMultiplier: 1.0,
+        dangerRatio: 1.15,
+        eatableRatio: 0.85,
+        powerupSpawnRate: 0.005,
+        startupDuration: 5000,
+        shieldDuration: 15000
+    },
+    hard: {
+        name: '困难',
+        description: '敌人较多，速度较快，成长较慢',
+        maxEnemyFish: 20,
+        enemySpeedMultiplier: 1.2,
+        growthMultiplier: 0.7,
+        dangerRatio: 1.1,
+        eatableRatio: 0.9,
+        powerupSpawnRate: 0.003,
+        startupDuration: 3000,
+        shieldDuration: 12000
+    }
+};
+
 window.CONFIG = {
   canvasWidth: 1000,
   canvasHeight: 700,
   playerBaseSize: 25,
   playerBaseSpeed: 3,
   playerMaxSize: 120,
-  maxEnemyFish: 15,
   maxPowerups: 3,
   speedBoostMultiplier: 1.8,
   speedBoostDuration: 8000,
-  shieldDuration: 10000,
+  shieldDuration: 15000,
   startupDuration: 5000,
   eatableSizeRatio: 0.85,
   dangerSizeRatio: 1.15,
