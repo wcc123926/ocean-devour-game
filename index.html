@@ -327,6 +327,9 @@
             speedBoostMultiplier: 1.8,
             speedBoostDuration: 8000,
             shieldDuration: 10000,
+            startupDuration: 5000,
+            eatableSizeRatio: 0.9,
+            dangerSizeRatio: 1.1,
             growthStages: [
                 { name: '幼鱼', minSize: 25, maxSize: 35, scorePerFish: 10 },
                 { name: '小鱼', minSize: 35, maxSize: 50, scorePerFish: 15 },
@@ -443,6 +446,8 @@
                 this.enemyFish = [];
                 this.powerups = [];
                 this.particles = [];
+                this.gameTime = 0;
+                this.isStartupPhase = true;
                 
                 // 创建玩家
                 this.player = new Player(
@@ -502,6 +507,14 @@
 
             update(deltaTime) {
                 if (this.state !== GameState.PLAYING) return;
+
+                // 更新游戏时间
+                this.gameTime += deltaTime * 1000;
+                
+                // 检测开局阶段是否结束
+                if (this.isStartupPhase && this.gameTime > CONFIG.startupDuration) {
+                    this.isStartupPhase = false;
+                }
 
                 // 更新背景元素
                 this.updateBackground(deltaTime);
@@ -576,14 +589,30 @@
                 const playerSize = this.player.size;
                 const sizes = [];
                 
-                // 70% 生成比玩家小或差不多的鱼
-                for (let i = 0; i < 7; i++) {
-                    sizes.push(playerSize * (0.5 + Math.random() * 0.7));
-                }
-                
-                // 30% 生成比玩家大的鱼
-                for (let i = 0; i < 3; i++) {
-                    sizes.push(playerSize * (1.1 + Math.random() * 1.5));
+                if (this.isStartupPhase) {
+                    // 开局阶段：只生成比玩家小或差不多的鱼，让玩家适应
+                    // 80% 生成明显比玩家小的鱼（可以吃）
+                    for (let i = 0; i < 8; i++) {
+                        sizes.push(playerSize * (0.4 + Math.random() * 0.45));
+                    }
+                    // 20% 生成和玩家差不多大的鱼（不危险但也不能吃）
+                    for (let i = 0; i < 2; i++) {
+                        sizes.push(playerSize * (0.95 + Math.random() * 0.15));
+                    }
+                } else {
+                    // 正常阶段：60% 可吃，30% 危险，10% 差不多
+                    // 60% 生成比玩家小的鱼（可以吃）
+                    for (let i = 0; i < 6; i++) {
+                        sizes.push(playerSize * (0.4 + Math.random() * 0.45));
+                    }
+                    // 30% 生成比玩家大的鱼（危险）
+                    for (let i = 0; i < 3; i++) {
+                        sizes.push(playerSize * (1.15 + Math.random() * 1.35));
+                    }
+                    // 10% 生成和玩家差不多大的鱼
+                    for (let i = 0; i < 1; i++) {
+                        sizes.push(playerSize * (0.95 + Math.random() * 0.2));
+                    }
                 }
 
                 const fishSize = sizes[Math.floor(Math.random() * sizes.length)];
@@ -633,25 +662,30 @@
                 // 玩家与敌人鱼碰撞
                 this.enemyFish.forEach((fish, fishIndex) => {
                     if (this.player.collidesWith(fish)) {
-                        const sizeRatio = fish.size / this.player.size;
+                        const playerSize = this.player.size;
+                        const enemySize = fish.size;
                         
-                        if (sizeRatio < 0.85) {
-                            // 吃掉小鱼
+                        // 清晰的大小判定：
+                        // 1. 敌人鱼比玩家小 10% 以上 → 可以吃
+                        // 2. 敌人鱼比玩家大 10% 以上 → 危险
+                        // 3. 相差在 10% 以内 → 互相穿过
+
+                        if (enemySize < playerSize * CONFIG.eatableSizeRatio) {
+                            // 吃掉小鱼（敌人明显比玩家小）
                             this.eatFish(fish, fishIndex);
-                        } else if (sizeRatio > 1.15) {
-                            // 碰到大鱼
+                        } else if (enemySize > playerSize * CONFIG.dangerSizeRatio) {
+                            // 碰到大鱼（敌人明显比玩家大）
                             if (this.player.hasShield) {
-                                // 有护盾，消耗护盾
+                                // 有护盾，只消耗护盾，不删除鱼，继续游戏
                                 this.player.shieldDuration = 0;
                                 this.player.hasShield = false;
-                                this.enemyFish.splice(fishIndex, 1);
-                                this.createParticles(fish.x, fish.y, '#ff6b6b', 10);
+                                this.createParticles(this.player.x, this.player.y, '#64b5f6', 15);
                             } else {
                                 // 没有护盾，游戏结束
                                 this.gameOver();
                             }
                         }
-                        // 差不多大小的鱼互相穿过
+                        // 差不多大小的鱼互相穿过，不产生任何效果
                     }
                 });
 
