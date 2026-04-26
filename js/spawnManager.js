@@ -3,33 +3,42 @@ window.SpawnManager = class SpawnManager {
         this.game = game;
         this.enemyFish = [];
         this.powerups = [];
+        this.lastSpawnTime = 0;
     }
 
     clear() {
         this.enemyFish = [];
         this.powerups = [];
+        this.lastSpawnTime = 0;
     }
 
     spawnEnemyFish() {
         const diffConfig = window.GameStatus.getDifficultyConfig();
-        if (this.enemyFish.length >= diffConfig.maxEnemyFish) return;
+        const now = performance.now();
+        
+        if (now - this.lastSpawnTime < (diffConfig.spawnCooldown || 400)) {
+            return;
+        }
+        
+        if (this.enemyFish.length >= diffConfig.maxEnemyFish) {
+            return;
+        }
 
+        this.lastSpawnTime = now;
+        
         const playerSize = this.game.player.size;
         const isStartupPhase = window.GameStatus.isStartupPhase;
         
         const sizes = [];
         
         if (isStartupPhase) {
-            console.log('Startup phase: only spawning safe fish, playerSize:', playerSize);
             for (let i = 0; i < 9; i++) {
                 const safeSize = playerSize * (0.4 + Math.random() * 0.4);
                 sizes.push(safeSize);
-                console.log('  Safe fish size:', safeSize, 'ratio:', safeSize / playerSize);
             }
             for (let i = 0; i < 1; i++) {
                 const similarSize = playerSize * (0.95 + Math.random() * 0.1);
                 sizes.push(similarSize);
-                console.log('  Similar fish size:', similarSize, 'ratio:', similarSize / playerSize);
             }
         } else {
             for (let i = 0; i < 6; i++) {
@@ -38,7 +47,6 @@ window.SpawnManager = class SpawnManager {
             for (let i = 0; i < 3; i++) {
                 const dangerSize = playerSize * (1.2 + Math.random() * 1.3);
                 sizes.push(dangerSize);
-                console.log('Danger fish size:', dangerSize, 'ratio:', dangerSize / playerSize);
             }
             for (let i = 0; i < 1; i++) {
                 sizes.push(playerSize * (0.95 + Math.random() * 0.2));
@@ -46,7 +54,6 @@ window.SpawnManager = class SpawnManager {
         }
 
         const fishSize = sizes[Math.floor(Math.random() * sizes.length)];
-        console.log('Selected fish size:', fishSize, 'ratio to player:', fishSize / playerSize);
         
         const edge = Math.floor(Math.random() * 4);
         let x, y, direction;
@@ -91,19 +98,21 @@ window.SpawnManager = class SpawnManager {
     }
 
     update(deltaTime, canvas) {
-        this.enemyFish.forEach((fish, index) => {
+        for (let i = this.enemyFish.length - 1; i >= 0; i--) {
+            const fish = this.enemyFish[i];
             fish.update(deltaTime, canvas);
             if (fish.isOutOfBounds(canvas)) {
-                this.enemyFish.splice(index, 1);
+                this.enemyFish.splice(i, 1);
             }
-        });
+        }
 
-        this.powerups.forEach((powerup, index) => {
+        for (let i = this.powerups.length - 1; i >= 0; i--) {
+            const powerup = this.powerups[i];
             powerup.update(deltaTime);
             if (powerup.lifetime <= 0) {
-                this.powerups.splice(index, 1);
+                this.powerups.splice(i, 1);
             }
-        });
+        }
     }
 
     removeFish(index) {

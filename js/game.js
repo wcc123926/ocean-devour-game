@@ -272,24 +272,34 @@ window.Game = class Game {
             this.player.update(deltaTime, this.mouse, this.canvas, this.keys);
             window.GameStatus.updateMaxSize(this.player.size);
         }
+        
+        if (!window.GameStatus.isPlaying()) return;
 
         if (this.spawnManager) {
             this.spawnManager.spawnEnemyFish();
             this.spawnManager.spawnPowerups();
             this.spawnManager.update(deltaTime, this.canvas);
         }
+        
+        if (!window.GameStatus.isPlaying()) return;
 
         if (this.particleSystem) {
             this.particleSystem.update(deltaTime);
         }
+        
+        if (!window.GameStatus.isPlaying()) return;
 
         if (this.collisionManager) {
             this.collisionManager.checkAllCollisions();
         }
+        
+        if (!window.GameStatus.isPlaying()) return;
 
         if (this.explosionManager) {
             this.explosionManager.update(deltaTime);
         }
+        
+        if (!window.GameStatus.isPlaying()) return;
 
         window.UIManager.updateUI();
     }
@@ -432,9 +442,10 @@ window.ExplosionManager = class ExplosionManager {
         if (this.game.player) {
             const dx = this.game.player.x - this.explosionX;
             const dy = this.game.player.y - this.explosionY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const distanceSq = dx * dx + dy * dy;
+            const radiusSq = this.explosionRadius * this.explosionRadius;
             
-            if (distance <= this.explosionRadius) {
+            if (distanceSq <= radiusSq) {
                 window.GameStatus.setDeathCause(window.DeathCause.EXPLOSION);
                 playerKilled = true;
             }
@@ -442,112 +453,49 @@ window.ExplosionManager = class ExplosionManager {
         
         if (this.game.spawnManager) {
             const enemies = this.game.spawnManager.enemyFish;
-            const indicesToRemove = [];
+            const radiusSq = this.explosionRadius * this.explosionRadius;
             
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const fish = enemies[i];
                 const dx = fish.x - this.explosionX;
                 const dy = fish.y - this.explosionY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                const distanceSq = dx * dx + dy * dy;
                 
-                if (distance <= this.explosionRadius) {
-                    indicesToRemove.push(i);
+                if (distanceSq <= radiusSq) {
+                    this.game.spawnManager.removeFish(i);
                     fishKilled++;
                 }
             }
-            
-            indicesToRemove.forEach(index => {
-                this.game.spawnManager.removeFish(index);
-            });
         }
         
         window.GameStatus.addFishKilledByExplosion(fishKilled);
         
-        console.log('Explosion triggered! Fish killed:', fishKilled, 'Player killed:', playerKilled);
-        
         if (playerKilled) {
             this.game.gameOver();
-        } else {
-            this.createExplosionEffect();
-        }
-    }
-
-    checkExplosionDamage() {
-        let fishKilled = 0;
-        let playerKilled = false;
-        
-        if (this.game.player) {
-            const dx = this.game.player.x - this.explosionX;
-            const dy = this.game.player.y - this.explosionY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance <= this.explosionRadius) {
-                window.GameStatus.setDeathCause(window.DeathCause.EXPLOSION);
-                playerKilled = true;
-                console.log('Player killed by explosion!');
-            }
+            return;
         }
         
-        if (this.game.spawnManager) {
-            const enemies = this.game.spawnManager.enemyFish;
-            const indicesToRemove = [];
-            
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const fish = enemies[i];
-                const dx = fish.x - this.explosionX;
-                const dy = fish.y - this.explosionY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance <= this.explosionRadius) {
-                    indicesToRemove.push(i);
-                    fishKilled++;
-                }
-            }
-            
-            indicesToRemove.forEach(index => {
-                this.game.spawnManager.removeFish(index);
-            });
-        }
-        
-        if (playerKilled) {
-            this.game.gameOver();
-        }
-        
-        return fishKilled;
+        this.createExplosionEffect();
     }
 
     createExplosionEffect() {
         if (!this.game.particleSystem) return;
         
-        const particleCount = 20;
+        const particleCount = 10;
         for (let i = 0; i < particleCount; i++) {
             const angle = (Math.PI * 2 / particleCount) * i;
-            const speed = 3 + Math.random() * 5;
-            const size = 5 + Math.random() * 8;
+            const speed = 2 + Math.random() * 3;
+            const size = 4 + Math.random() * 6;
             
             this.game.particleSystem.particles.push(new window.Particle(
                 this.explosionX,
                 this.explosionY,
-                Math.random() > 0.5 ? '#ff5722' : '#ff9800',
+                '#ff5722',
                 {
                     vx: Math.cos(angle) * speed,
                     vy: Math.sin(angle) * speed,
                     size: size,
-                    lifetime: 500 + Math.random() * 300
-                }
-            ));
-        }
-        
-        for (let i = 0; i < 3; i++) {
-            this.game.particleSystem.particles.push(new window.Particle(
-                this.explosionX,
-                this.explosionY,
-                '#ffd700',
-                {
-                    type: 'ring',
-                    size: 40 + i * 30,
-                    lifetime: 300 + i * 80,
-                    fadeIn: 0.1
+                    lifetime: 400 + Math.random() * 200
                 }
             ));
         }
@@ -571,93 +519,21 @@ window.ExplosionManager = class ExplosionManager {
     render(ctx) {
         if (this.state === window.ExplosionState.WARNING) {
             this.renderWarningZone(ctx);
-        } else if (this.state === window.ExplosionState.EXPLODING) {
-            this.renderExplosionEffect(ctx);
         }
     }
 
     renderWarningZone(ctx) {
-        const pulse = Math.sin(this.warningPulsePhase) * 0.3 + 0.7;
-        
-        const gradient = ctx.createRadialGradient(
-            this.explosionX, this.explosionY, 0,
-            this.explosionX, this.explosionY, this.explosionRadius
-        );
-        
-        gradient.addColorStop(0, `rgba(255, 87, 34, ${0.1 * pulse})`);
-        gradient.addColorStop(0.7, `rgba(255, 87, 34, ${0.2 * pulse})`);
-        gradient.addColorStop(1, `rgba(255, 87, 34, ${0.4 * pulse})`);
+        const pulse = Math.sin(this.warningPulsePhase) * 0.2 + 0.6;
         
         ctx.beginPath();
         ctx.arc(this.explosionX, this.explosionY, this.explosionRadius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
+        ctx.fillStyle = `rgba(255, 87, 34, ${0.15 * pulse})`;
         ctx.fill();
         
-        const dashOffset = this.warningPulsePhase * 20;
-        ctx.setLineDash([10, 10]);
-        ctx.lineDashOffset = dashOffset;
+        ctx.beginPath();
+        ctx.arc(this.explosionX, this.explosionY, this.explosionRadius, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(255, 87, 34, ${0.8 * pulse})`;
         ctx.lineWidth = 3;
         ctx.stroke();
-        ctx.setLineDash([]);
-        
-        const innerRadius = this.explosionRadius * 0.8;
-        ctx.beginPath();
-        ctx.arc(this.explosionX, this.explosionY, innerRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255, 152, 0, ${0.5 * pulse})`;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        ctx.lineDashOffset = -dashOffset;
-        ctx.stroke();
-        ctx.setLineDash([]);
-        
-        this.renderWarningIndicator(ctx);
-    }
-
-    renderWarningIndicator(ctx) {
-        const indicatorRadius = 30;
-        const pulse = Math.sin(this.warningPulsePhase * 2) * 0.3 + 0.7;
-        
-        ctx.save();
-        ctx.translate(this.explosionX, this.explosionY);
-        
-        const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, indicatorRadius * 2);
-        glowGradient.addColorStop(0, `rgba(255, 87, 34, ${0.3 * pulse})`);
-        glowGradient.addColorStop(1, 'rgba(255, 87, 34, 0)');
-        
-        ctx.beginPath();
-        ctx.arc(0, 0, indicatorRadius * 2, 0, Math.PI * 2);
-        ctx.fillStyle = glowGradient;
-        ctx.fill();
-        
-        ctx.font = `bold ${indicatorRadius}px Arial`;
-        ctx.fillStyle = `rgba(255, 87, 34, ${pulse})`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('⚠', 0, 0);
-        
-        ctx.restore();
-    }
-
-    renderExplosionEffect(ctx) {
-        const progress = Math.min(this.explosionAnimationPhase / 500, 1);
-        const expandingRadius = this.explosionRadius * (1 + progress * 0.5);
-        
-        const alpha = 1 - progress;
-        
-        const gradient = ctx.createRadialGradient(
-            this.explosionX, this.explosionY, 0,
-            this.explosionX, this.explosionY, expandingRadius
-        );
-        
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.8})`);
-        gradient.addColorStop(0.3, `rgba(255, 215, 0, ${alpha * 0.6})`);
-        gradient.addColorStop(0.6, `rgba(255, 152, 0, ${alpha * 0.4})`);
-        gradient.addColorStop(1, `rgba(255, 87, 34, 0)`);
-        
-        ctx.beginPath();
-        ctx.arc(this.explosionX, this.explosionY, expandingRadius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
     }
 };
