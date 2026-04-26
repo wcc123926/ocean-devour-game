@@ -15,6 +15,11 @@ window.Player = class Player {
         this.shieldPulse = 0;
         this.speedTrails = [];
         this.previousSize = size;
+        this.isInvulnerable = false;
+        this.invulnerabilityDuration = 0;
+        this.invulnerabilityFlashRate = 0.1;
+        this.invulnerabilityFlashTimer = 0;
+        this.showPlayer = true;
     }
 
     update(deltaTime, mouse, canvas) {
@@ -37,6 +42,20 @@ window.Player = class Player {
 
         if (this.boostCooldown > 0) {
             this.boostCooldown -= deltaTime * 1000;
+        }
+
+        if (this.isInvulnerable) {
+            this.invulnerabilityDuration -= deltaTime * 1000;
+            if (this.invulnerabilityDuration <= 0) {
+                this.isInvulnerable = false;
+                this.showPlayer = true;
+            } else {
+                this.invulnerabilityFlashTimer += deltaTime;
+                if (this.invulnerabilityFlashTimer >= this.invulnerabilityFlashRate) {
+                    this.invulnerabilityFlashTimer = 0;
+                    this.showPlayer = !this.showPlayer;
+                }
+            }
         }
 
         const dx = mouse.x - this.x;
@@ -112,7 +131,18 @@ window.Player = class Player {
         this.size = newSize;
     }
 
+    activateInvulnerability(durationMs = 2000) {
+        this.isInvulnerable = true;
+        this.invulnerabilityDuration = durationMs;
+        this.invulnerabilityFlashTimer = 0;
+        this.showPlayer = true;
+    }
+
     collidesWith(object) {
+        if (this.isInvulnerable) {
+            return false;
+        }
+        
         const dx = this.x - object.x;
         const dy = this.y - object.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -135,9 +165,17 @@ window.Player = class Player {
     render(ctx) {
         this.renderSpeedTrails(ctx);
 
+        if (!this.showPlayer) {
+            return;
+        }
+
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.direction);
+
+        if (this.isInvulnerable) {
+            this.renderInvulnerabilityEffect(ctx);
+        }
 
         if (this.hasShield) {
             this.renderShield(ctx);
@@ -245,6 +283,24 @@ window.Player = class Player {
         ctx.stroke();
 
         ctx.restore();
+    }
+
+    renderInvulnerabilityEffect(ctx) {
+        const flashAlpha = 0.3 + Math.sin(this.shieldPulse * 3) * 0.2;
+        
+        const invulnerabilityGradient = ctx.createRadialGradient(0, 0, this.size * 0.5, 0, 0, this.size * 1.5);
+        invulnerabilityGradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
+        invulnerabilityGradient.addColorStop(0.6, `rgba(255, 215, 0, ${flashAlpha * 0.3})`);
+        invulnerabilityGradient.addColorStop(1, `rgba(255, 215, 0, ${flashAlpha * 0.5})`);
+
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size * 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = invulnerabilityGradient;
+        ctx.fill();
+        
+        ctx.strokeStyle = `rgba(255, 215, 0, ${flashAlpha})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
     }
 
     renderSpeedTrails(ctx) {
