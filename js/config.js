@@ -1,0 +1,65 @@
+window.CONFIG = {
+  canvasWidth: 1000,
+  canvasHeight: 700,
+  playerBaseSize: 25,
+  playerBaseSpeed: 3,
+  playerMaxSize: 120,
+  maxEnemyFish: 15,
+  maxPowerups: 3,
+  speedBoostMultiplier: 1.8,
+  speedBoostDuration: 8000,
+  shieldDuration: 10000,
+  startupDuration: 5000,
+  eatableSizeRatio: 0.85,
+  dangerSizeRatio: 1.15,
+  minSpeed: 1.5,
+  maxSpeed: 6,
+
+  speedLevels: [
+    { name: "极慢", threshold: 0.6, color: "#9e9e9e" },
+    { name: "缓慢", threshold: 0.75, color: "#607d8b" },
+    { name: "正常", threshold: 1.0, color: "#4caf50" },
+    { name: "快速", threshold: 1.3, color: "#ffc107" },
+    { name: "极速", threshold: 2.0, color: "#ff5722" },
+  ],
+
+  growthStages: [
+    {
+      name: "幼鱼",
+      minSize: 25,
+      maxSize: 35,
+      scorePerFish: 10,
+      sizeColor: "#64b5f6",
+    },
+    {
+      name: "小鱼",
+      minSize: 35,
+      maxSize: 50,
+      scorePerFish: 15,
+      sizeColor: "#42a5f5",
+    },
+    {
+      name: "中鱼",
+      minSize: 50,
+      maxSize: 70,
+      scorePerFish: 20,
+      sizeColor: "#2196f3",
+    },
+    {
+      name: "大鱼",
+      minSize: 70,
+      maxSize: 90,
+      scorePerFish: 30,
+      sizeColor: "#1976d2",
+    },
+    {
+      name: "巨型鱼",
+      minSize: 90,
+      maxSize: 120,
+      scorePerFish: 50,
+      sizeColor: "#0d47a1",
+    },
+  ],
+
+  stageRequirements: [0, 100, 300, 600, 1000],
+};
