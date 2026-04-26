@@ -11,7 +11,8 @@ window.SpawnManager = class SpawnManager {
     }
 
     spawnEnemyFish() {
-        if (this.enemyFish.length >= window.CONFIG.maxEnemyFish) return;
+        const diffConfig = window.GameStatus.getDifficultyConfig();
+        if (this.enemyFish.length >= diffConfig.maxEnemyFish) return;
 
         const playerSize = this.game.player.size;
         const isStartupPhase = window.GameStatus.isStartupPhase;
@@ -78,7 +79,9 @@ window.SpawnManager = class SpawnManager {
 
     spawnPowerups() {
         if (this.powerups.length >= window.CONFIG.maxPowerups) return;
-        if (Math.random() > 0.005) return;
+        
+        const diffConfig = window.GameStatus.getDifficultyConfig();
+        if (Math.random() > diffConfig.powerupSpawnRate) return;
 
         const x = 100 + Math.random() * (window.CONFIG.canvasWidth - 200);
         const y = 100 + Math.random() * (window.CONFIG.canvasHeight - 200);

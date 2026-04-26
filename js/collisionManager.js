@@ -11,6 +11,7 @@ window.CollisionManager = class CollisionManager {
     checkPlayerEnemyCollisions() {
         const player = this.game.player;
         const enemies = this.game.spawnManager.enemyFish;
+        const diffConfig = window.GameStatus.getDifficultyConfig();
         
         enemies.forEach((fish, fishIndex) => {
             if (player.collidesWith(fish)) {
@@ -22,13 +23,13 @@ window.CollisionManager = class CollisionManager {
                 console.log('  Player size:', playerSize);
                 console.log('  Enemy size:', enemySize);
                 console.log('  Size ratio (enemy/player):', sizeRatio);
-                console.log('  Eatable ratio:', window.CONFIG.eatableSizeRatio);
-                console.log('  Danger ratio:', window.CONFIG.dangerSizeRatio);
+                console.log('  Eatable ratio:', diffConfig.eatableRatio);
+                console.log('  Danger ratio:', diffConfig.dangerRatio);
 
-                if (sizeRatio < window.CONFIG.eatableSizeRatio) {
+                if (sizeRatio < diffConfig.eatableRatio) {
                     console.log('  => Can eat! (ratio < eatableRatio)');
                     this.eatFish(fish, fishIndex);
-                } else if (sizeRatio > window.CONFIG.dangerSizeRatio) {
+                } else if (sizeRatio > diffConfig.dangerRatio) {
                     console.log('  => DANGER! (ratio > dangerRatio)');
                     console.log('  Has shield:', player.hasShield);
                     if (player.hasShield) {
@@ -60,12 +61,14 @@ window.CollisionManager = class CollisionManager {
         const stage = window.GameUtils.getCurrentStage();
         const points = stage.scorePerFish;
         window.GameStatus.addScore(points);
+        window.GameStatus.incrementFishEaten();
 
-        const growthAmount = fish.size * 0.15;
+        const diffConfig = window.GameStatus.getDifficultyConfig();
+        const growthAmount = fish.size * 0.15 * diffConfig.growthMultiplier;
         const newSize = Math.min(this.game.player.size + growthAmount, window.CONFIG.playerMaxSize);
         this.game.player.grow(newSize);
 
-        this.game.particleSystem.createParticles(fish.x, fish.y, '#4caf50', 8);
+        this.game.particleSystem.createEatEffect(fish.x, fish.y, points);
 
         this.game.spawnManager.removeFish(fishIndex);
     }
@@ -73,26 +76,26 @@ window.CollisionManager = class CollisionManager {
     handleShieldCollision(player) {
         player.shieldDuration = 0;
         player.hasShield = false;
-        this.game.particleSystem.createParticles(player.x, player.y, '#64b5f6', 15);
+        this.game.particleSystem.createShieldBreakEffect(player.x, player.y);
+        
+        window.NotificationManager.show('🛡️ 护盾消耗！', '抵挡了一次致命攻击', 2000);
     }
 
     collectPowerup(powerup, index) {
         const player = this.game.player;
+        const diffConfig = window.GameStatus.getDifficultyConfig();
+        
+        window.GameStatus.incrementPowerupsCollected();
         
         if (powerup.type === 'speed') {
             player.speedBoostDuration = window.CONFIG.speedBoostDuration;
             player.hasSpeedBoost = true;
+            this.game.particleSystem.createSpeedCollectEffect(powerup.x, powerup.y);
         } else if (powerup.type === 'shield') {
-            player.shieldDuration = window.CONFIG.shieldDuration;
+            player.shieldDuration = diffConfig.shieldDuration;
             player.hasShield = true;
+            this.game.particleSystem.createShieldCollectEffect(powerup.x, powerup.y);
         }
-
-        this.game.particleSystem.createParticles(
-            powerup.x, 
-            powerup.y, 
-            powerup.type === 'speed' ? '#ffd700' : '#64b5f6', 
-            12
-        );
         
         this.game.spawnManager.removePowerup(index);
     }

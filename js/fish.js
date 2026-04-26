@@ -12,6 +12,9 @@ window.Player = class Player {
         this.boostCooldown = 0;
         this.tailWag = 0;
         this.currentSpeed = this.baseSpeed;
+        this.shieldPulse = 0;
+        this.speedTrails = [];
+        this.previousSize = size;
     }
 
     update(deltaTime, mouse, canvas) {
@@ -20,6 +23,7 @@ window.Player = class Player {
             if (this.speedBoostDuration <= 0) {
                 this.hasSpeedBoost = false;
                 this.speedBoostDuration = 0;
+                this.speedTrails = [];
             }
         }
 
@@ -59,12 +63,44 @@ window.Player = class Player {
         if (distance > 5) {
             this.x += Math.cos(this.direction) * currentSpeed;
             this.y += Math.sin(this.direction) * currentSpeed;
+            
+            if (this.hasSpeedBoost && currentSpeed > this.baseSpeed * 1.2) {
+                this.addSpeedTrail();
+            }
         }
 
         this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));
         this.y = Math.max(this.size, Math.min(canvas.height - this.size, this.y));
 
-        this.tailWag += 0.2;
+        this.tailWag += 0.2 + (currentSpeed / this.baseSpeed) * 0.1;
+        this.shieldPulse += 0.1;
+        
+        this.updateSpeedTrails(deltaTime);
+        
+        this.previousSize = this.size;
+    }
+
+    addSpeedTrail() {
+        this.speedTrails.push({
+            x: this.x - Math.cos(this.direction) * this.size * 0.8,
+            y: this.y - Math.sin(this.direction) * this.size * 0.8,
+            size: this.size * 0.6,
+            alpha: 0.6,
+            direction: this.direction
+        });
+        
+        if (this.speedTrails.length > 8) {
+            this.speedTrails.shift();
+        }
+    }
+
+    updateSpeedTrails(deltaTime) {
+        this.speedTrails.forEach((trail, index) => {
+            trail.alpha -= deltaTime * 2;
+            trail.size *= 0.95;
+        });
+        
+        this.speedTrails = this.speedTrails.filter(trail => trail.alpha > 0);
     }
 
     boost() {
@@ -97,33 +133,18 @@ window.Player = class Player {
     }
 
     render(ctx) {
+        this.renderSpeedTrails(ctx);
+
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.direction);
 
         if (this.hasShield) {
-            ctx.beginPath();
-            ctx.arc(0, 0, this.size * 1.3, 0, Math.PI * 2);
-            const shieldGradient = ctx.createRadialGradient(0, 0, this.size, 0, 0, this.size * 1.3);
-            shieldGradient.addColorStop(0, 'rgba(100, 181, 246, 0)');
-            shieldGradient.addColorStop(0.7, 'rgba(100, 181, 246, 0.3)');
-            shieldGradient.addColorStop(1, 'rgba(100, 181, 246, 0.6)');
-            ctx.fillStyle = shieldGradient;
-            ctx.fill();
-            
-            ctx.strokeStyle = 'rgba(100, 181, 246, 0.8)';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            this.renderShield(ctx);
         }
 
         if (this.hasSpeedBoost) {
-            ctx.beginPath();
-            ctx.moveTo(-this.size * 0.5, 0);
-            ctx.lineTo(-this.size * 1.5, -this.size * 0.3);
-            ctx.lineTo(-this.size * 1.5, this.size * 0.3);
-            ctx.closePath();
-            ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
-            ctx.fill();
+            this.renderSpeedEffect(ctx);
         }
 
         const stage = window.GameUtils.getCurrentStageBySize(this.size);
@@ -147,7 +168,8 @@ window.Player = class Player {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        const tailWagOffset = Math.sin(this.tailWag) * this.size * 0.1;
+        const tailWagOffset = Math.sin(this.tailWag) * this.size * 0.15;
+        
         ctx.beginPath();
         ctx.moveTo(-this.size * 0.7, 0);
         ctx.quadraticCurveTo(
@@ -165,11 +187,12 @@ window.Player = class Player {
         ctx.fillStyle = lightColor;
         ctx.fill();
 
+        const dorsalWag = Math.sin(this.tailWag * 0.8) * 0.1;
         ctx.beginPath();
         ctx.moveTo(0, -this.size * 0.45);
         ctx.quadraticCurveTo(
-            -this.size * 0.3, -this.size * 0.8,
-            -this.size * 0.1, -this.size * 0.6
+            -this.size * 0.3 + dorsalWag * this.size, -this.size * 0.8,
+            -this.size * 0.1 + dorsalWag * this.size * 0.5, -this.size * 0.6
         );
         ctx.lineTo(0, -this.size * 0.45);
         ctx.fillStyle = lightColor;
@@ -188,9 +211,18 @@ window.Player = class Player {
         ctx.fillStyle = lightColor;
         ctx.fill();
 
+        const eyeGlow = this.hasSpeedBoost ? 0.3 : 0.1;
+        const eyeGradient = ctx.createRadialGradient(
+            this.size * 0.4, -this.size * 0.15, 0,
+            this.size * 0.4, -this.size * 0.15, this.size * 0.15
+        );
+        eyeGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        eyeGradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.8)');
+        eyeGradient.addColorStop(1, `rgba(255, 255, 255, ${eyeGlow})`);
+
         ctx.beginPath();
         ctx.arc(this.size * 0.4, -this.size * 0.15, this.size * 0.15, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = eyeGradient;
         ctx.fill();
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 1;
@@ -213,6 +245,105 @@ window.Player = class Player {
         ctx.stroke();
 
         ctx.restore();
+    }
+
+    renderSpeedTrails(ctx) {
+        this.speedTrails.forEach(trail => {
+            ctx.save();
+            ctx.globalAlpha = trail.alpha * 0.5;
+            ctx.translate(trail.x, trail.y);
+            ctx.rotate(trail.direction);
+            
+            const trailGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, trail.size);
+            trailGradient.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+            trailGradient.addColorStop(0.5, 'rgba(255, 193, 7, 0.3)');
+            trailGradient.addColorStop(1, 'rgba(255, 152, 0, 0)');
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, trail.size, 0, Math.PI * 2);
+            ctx.fillStyle = trailGradient;
+            ctx.fill();
+            
+            ctx.restore();
+        });
+    }
+
+    renderShield(ctx) {
+        const shieldSize = this.size * 1.4;
+        const pulseAmount = Math.sin(this.shieldPulse * 2) * 0.1;
+        const currentShieldSize = shieldSize * (1 + pulseAmount);
+        
+        const isWarning = this.shieldDuration < 3000;
+        const baseAlpha = isWarning ? 0.4 + Math.sin(this.shieldPulse * 5) * 0.3 : 0.6;
+        
+        const shieldGradient = ctx.createRadialGradient(0, 0, this.size, 0, 0, currentShieldSize);
+        shieldGradient.addColorStop(0, `rgba(100, 181, 246, 0)`);
+        shieldGradient.addColorStop(0.6, `rgba(100, 181, 246, ${baseAlpha * 0.5})`);
+        shieldGradient.addColorStop(1, `rgba(100, 181, 246, ${baseAlpha})`);
+
+        ctx.beginPath();
+        ctx.arc(0, 0, currentShieldSize, 0, Math.PI * 2);
+        ctx.fillStyle = shieldGradient;
+        ctx.fill();
+        
+        const ringColor = isWarning ? '#ff5722' : '#64b5f6';
+        const ringAlpha = isWarning ? 0.8 + Math.sin(this.shieldPulse * 5) * 0.2 : 0.6;
+        
+        ctx.strokeStyle = `rgba(${isWarning ? '255, 87, 34' : '100, 181, 246'}, ${ringAlpha})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, currentShieldSize * 0.9, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${isWarning ? '255, 87, 34' : '100, 181, 246'}, ${ringAlpha * 0.4})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI * 2 / 6) * i + this.shieldPulse * 0.5;
+            const dotX = Math.cos(angle) * currentShieldSize;
+            const dotY = Math.sin(angle) * currentShieldSize;
+            
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${baseAlpha * 0.8})`;
+            ctx.fill();
+        }
+    }
+
+    renderSpeedEffect(ctx) {
+        const speedLevel = this.currentSpeed / this.baseSpeed;
+        const intensity = Math.min((speedLevel - 1) / 0.8, 1);
+        
+        const effectGradient = ctx.createRadialGradient(
+            -this.size * 0.5, 0, 0,
+            -this.size * 1.2, 0, this.size * 0.8
+        );
+        effectGradient.addColorStop(0, `rgba(255, 215, 0, ${0.3 * intensity})`);
+        effectGradient.addColorStop(0.5, `rgba(255, 193, 7, ${0.2 * intensity})`);
+        effectGradient.addColorStop(1, 'rgba(255, 152, 0, 0)');
+
+        ctx.beginPath();
+        ctx.moveTo(-this.size * 0.3, -this.size * 0.3);
+        ctx.lineTo(-this.size * 1.8 - intensity * this.size, -this.size * 0.5);
+        ctx.lineTo(-this.size * 1.8 - intensity * this.size, this.size * 0.5);
+        ctx.lineTo(-this.size * 0.3, this.size * 0.3);
+        ctx.closePath();
+        ctx.fillStyle = effectGradient;
+        ctx.fill();
+        
+        const streakCount = 3 + Math.floor(intensity * 3);
+        for (let i = 0; i < streakCount; i++) {
+            const yOffset = (i - streakCount / 2) * this.size * 0.25;
+            const length = this.size * (0.8 + Math.random() * 0.4 + intensity * 0.5);
+            
+            ctx.beginPath();
+            ctx.moveTo(-this.size * 0.5, yOffset);
+            ctx.lineTo(-this.size * 0.5 - length, yOffset + (Math.random() - 0.5) * this.size * 0.2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 + Math.random() * 0.2})`;
+            ctx.lineWidth = 1 + Math.random() * 2;
+            ctx.stroke();
+        }
     }
 
     getDarkerColor(hex) {
@@ -239,6 +370,7 @@ window.EnemyFish = class EnemyFish {
         this.speed = this.calculateSpeed();
         this.tailWag = Math.random() * Math.PI * 2;
         this.color = this.getRandomColor();
+        this.eyePhase = Math.random() * Math.PI * 2;
     }
 
     calculateSpeed() {
@@ -267,6 +399,7 @@ window.EnemyFish = class EnemyFish {
         this.x += Math.cos(this.direction) * this.speed;
         this.y += Math.sin(this.direction) * this.speed;
         this.tailWag += 0.15;
+        this.eyePhase += 0.05;
     }
 
     isOutOfBounds(canvas) {
@@ -306,7 +439,7 @@ window.EnemyFish = class EnemyFish {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        const tailWagOffset = Math.sin(this.tailWag) * this.size * 0.1;
+        const tailWagOffset = Math.sin(this.tailWag) * this.size * 0.12;
         ctx.beginPath();
         ctx.moveTo(-this.size * 0.7, 0);
         ctx.quadraticCurveTo(
@@ -324,16 +457,25 @@ window.EnemyFish = class EnemyFish {
         ctx.fillStyle = this.color.light;
         ctx.fill();
 
+        const eyeGlow = Math.sin(this.eyePhase) * 0.05 + 0.1;
+        const eyeGradient = ctx.createRadialGradient(
+            this.size * 0.4, -this.size * 0.15, 0,
+            this.size * 0.4, -this.size * 0.15, this.size * 0.12
+        );
+        eyeGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        eyeGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.9)');
+        eyeGradient.addColorStop(1, `rgba(255, 255, 255, ${eyeGlow})`);
+
         ctx.beginPath();
         ctx.arc(this.size * 0.4, -this.size * 0.15, this.size * 0.12, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = eyeGradient;
         ctx.fill();
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 1;
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(this.size * 0.44, -this.size * 0.15, this.size * 0.06, 0, Math.PI * 2);
+        ctx.arc(this.size * 0.43, -this.size * 0.15, this.size * 0.06, 0, Math.PI * 2);
         ctx.fillStyle = '#333';
         ctx.fill();
 

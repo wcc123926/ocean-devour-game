@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>海底吞噬成长游戏</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,26 +12,40 @@
         
         <div class="ui-panel">
             <div class="stats-panel">
-                <div class="stat-item">
-                    <span class="stat-label">分数:</span>
-                    <span class="stat-value" id="scoreValue">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">体型阶段:</span>
-                    <span class="stat-value" id="stageValue">1 - 幼鱼</span>
-                </div>
-                <div class="speed-indicator">
-                    <span class="stat-label">速度:</span>
-                    <div class="speed-bar">
-                        <div class="speed-bar-fill" id="speedBarFill" style="width: 50%"></div>
+                <div class="stat-row">
+                    <div class="stat-item">
+                        <span class="stat-label">分数</span>
+                        <span class="stat-value" id="scoreValue">0</span>
                     </div>
-                    <span class="stat-value" id="speedLevelText" style="color: #4caf50">正常</span>
+                    <div class="stat-item">
+                        <span class="stat-label">难度</span>
+                        <span class="stat-value" id="difficultyValue">普通</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">下一阶段进度:</span>
+                <div class="stat-row">
+                    <div class="stat-item">
+                        <span class="stat-label">阶段</span>
+                        <span class="stat-value" id="stageValue">幼鱼</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">时间</span>
+                        <span class="stat-value" id="timeValue">0:00</span>
+                    </div>
                 </div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                <div class="goal-panel">
+                    <div class="goal-title">成长目标</div>
+                    <div class="goal-current" id="goalCurrent">
+                        <span class="goal-icon">🐟</span>
+                        <span class="goal-text">当前: 幼鱼 (25)</span>
+                    </div>
+                    <div class="goal-next" id="goalNext">
+                        <span class="goal-icon">➡️</span>
+                        <span class="goal-text">下一: 小鱼 (35)</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
                 </div>
             </div>
             
@@ -49,21 +63,52 @@
             </div>
         </div>
 
+        <div class="screen-notification hidden" id="screenNotification"></div>
+        <div class="shield-warning hidden" id="shieldWarning"></div>
+
         <div class="pause-indicator hidden" id="pauseIndicator">游戏暂停</div>
 
         <div class="game-overlay" id="startOverlay">
             <div class="overlay-title">🐟 海底吞噬成长</div>
             <div class="overlay-subtitle">成为海洋之王！</div>
+            
+            <div class="difficulty-selector">
+                <div class="selector-title">选择难度</div>
+                <div class="difficulty-options">
+                    <button class="difficulty-btn" data-difficulty="easy">
+                        <div class="diff-name">🌱 简单</div>
+                        <div class="diff-desc">敌人少，成长快</div>
+                    </button>
+                    <button class="difficulty-btn active" data-difficulty="normal">
+                        <div class="diff-name">⚔️ 普通</div>
+                        <div class="diff-desc">标准体验</div>
+                    </button>
+                    <button class="difficulty-btn" data-difficulty="hard">
+                        <div class="diff-name">🔥 困难</div>
+                        <div class="diff-desc">敌人多，成长慢</div>
+                    </button>
+                </div>
+            </div>
+
             <div class="instructions">
-                吃掉比你小的鱼来成长<br>
-                躲避比你大的鱼<br>
-                收集道具获得加成<br><br>
-                <strong>规则说明:</strong><br>
-                • 敌人鱼比你小 15% 以上 → 可以吃掉<br>
-                • 敌人鱼比你大 15% 以上 → 危险（会失败）<br>
-                • 大小差不多的鱼 → 互相穿过<br><br>
-                <strong>操作方式:</strong><br>
-                鼠标移动控制方向，点击加速
+                <div class="instruction-section">
+                    <strong>🎯 游戏规则</strong><br>
+                    • 吃掉比你小的鱼来成长<br>
+                    • 躲避比你大的鱼<br>
+                    • 收集道具获得加成
+                </div>
+                <div class="instruction-section">
+                    <strong>📏 大小判定</strong><br>
+                    • 敌人比你小很多 → 可以吃掉<br>
+                    • 敌人比你大很多 → 危险<br>
+                    • 大小差不多 → 互相穿过
+                </div>
+                <div class="instruction-section">
+                    <strong>🎮 操作方式</strong><br>
+                    • 鼠标/触屏移动控制方向<br>
+                    • 点击/触摸屏幕加速<br>
+                    • 按 ESC 暂停游戏
+                </div>
             </div>
             <button class="game-button" id="startButton">开始游戏</button>
         </div>
@@ -76,13 +121,58 @@
 
         <div class="game-overlay hidden" id="gameOverOverlay">
             <div class="overlay-title">💀 游戏结束</div>
-            <div class="overlay-subtitle">你被更大的鱼吃掉了！</div>
-            <div class="score-display">最终分数: <span id="finalScore">0</span></div>
+            <div class="overlay-subtitle" id="gameOverReason">你被更大的鱼吃掉了！</div>
+            
+            <div class="stats-summary">
+                <div class="stat-summary-item">
+                    <span class="summary-icon">🏆</span>
+                    <div class="summary-value" id="summaryScore">0</div>
+                    <div class="summary-label">最终分数</div>
+                </div>
+                <div class="stat-summary-item">
+                    <span class="summary-icon">🐟</span>
+                    <div class="summary-value" id="summaryFish">0</div>
+                    <div class="summary-label">吃掉鱼数</div>
+                </div>
+                <div class="stat-summary-item">
+                    <span class="summary-icon">⭐</span>
+                    <div class="summary-value" id="summaryStage">1</div>
+                    <div class="summary-label">最高阶段</div>
+                </div>
+                <div class="stat-summary-item">
+                    <span class="summary-icon">⏱️</span>
+                    <div class="summary-value" id="summaryTime">0:00</div>
+                    <div class="summary-label">存活时间</div>
+                </div>
+                <div class="stat-summary-item">
+                    <span class="summary-icon">🎁</span>
+                    <div class="summary-value" id="summaryPowerups">0</div>
+                    <div class="summary-label">收集道具</div>
+                </div>
+                <div class="stat-summary-item">
+                    <span class="summary-icon">📏</span>
+                    <div class="summary-value" id="summarySize">25</div>
+                    <div class="summary-label">最大体型</div>
+                </div>
+            </div>
+
             <button class="game-button" id="restartButton">再来一次</button>
         </div>
 
+        <div class="mobile-controls hidden" id="mobileControls">
+            <div class="joystick-area" id="joystickArea">
+                <div class="joystick-base" id="joystickBase">
+                    <div class="joystick-stick" id="joystickStick"></div>
+                </div>
+            </div>
+            <button class="boost-btn" id="boostBtn">
+                <span class="boost-icon">⚡</span>
+                <span class="boost-text">加速</span>
+            </button>
+        </div>
+
         <div class="controls-hint">
-            按 ESC 暂停游戏 | 鼠标移动控制方向 | 点击加速
+            按 ESC 暂停 | 鼠标/触屏控制方向 | 点击加速
         </div>
     </div>
 
