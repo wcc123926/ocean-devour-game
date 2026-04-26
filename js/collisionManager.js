@@ -34,7 +34,7 @@ window.CollisionManager = class CollisionManager {
                     console.log('  Has shield:', player.hasShield);
                     if (player.hasShield) {
                         console.log('  => Shield consumed, game continues');
-                        this.handleShieldCollision(player);
+                        this.handleShieldCollision(player, fishIndex);
                     } else {
                         console.log('  => No shield, game over!');
                         this.game.gameOver();
@@ -73,12 +73,19 @@ window.CollisionManager = class CollisionManager {
         this.game.spawnManager.removeFish(fishIndex);
     }
 
-    handleShieldCollision(player) {
+    handleShieldCollision(player, fishIndex) {
         player.shieldDuration = 0;
         player.hasShield = false;
+        
+        player.activateInvulnerability(2500);
+        
         this.game.particleSystem.createShieldBreakEffect(player.x, player.y);
         
-        window.NotificationManager.show('🛡️ 护盾消耗！', '抵挡了一次致命攻击', 2000);
+        if (fishIndex !== undefined) {
+            this.game.spawnManager.removeFish(fishIndex);
+        }
+        
+        window.NotificationManager.show('🛡️ 护盾消耗！', '无敌2.5秒，继续战斗！', 2000);
     }
 
     collectPowerup(powerup, index) {

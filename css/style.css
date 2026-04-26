@@ -189,45 +189,54 @@ body {
 
 .screen-notification {
   position: absolute;
-  top: 50%;
+  top: 15%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, 0);
   pointer-events: none;
   z-index: 30;
   text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
+  border-radius: 10px;
+  padding: 10px 20px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
 }
 
 .screen-notification .notification-text {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: bold;
   color: #ffd700;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
-               0 0 40px rgba(255, 215, 0, 0.4);
-  animation: popIn 0.5s ease-out;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  animation: popIn 0.4s ease-out;
 }
 
 .screen-notification .notification-subtitle {
-  font-size: 16px;
-  color: #90caf9;
-  margin-top: 5px;
-  animation: fadeInUp 0.5s ease-out;
+  font-size: 13px;
+  color: rgba(144, 202, 249, 0.9);
+  margin-top: 3px;
+  animation: fadeInUp 0.4s ease-out;
 }
 
 .shield-warning {
   position: absolute;
-  top: 50%;
+  top: 12%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, 0);
   pointer-events: none;
   z-index: 25;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  border-radius: 8px;
+  padding: 6px 15px;
+  border: 1px solid rgba(255, 87, 34, 0.4);
 }
 
 .shield-warning .warning-text {
-  font-size: 36px;
+  font-size: 22px;
   font-weight: bold;
   color: #ff5722;
-  text-shadow: 0 0 20px rgba(255, 87, 34, 0.8);
-  animation: shieldWarningPulse 1s ease-in-out infinite;
+  text-shadow: 0 0 15px rgba(255, 87, 34, 0.6);
+  animation: shieldWarningPulse 0.8s ease-in-out infinite;
 }
 
 @keyframes popIn {
