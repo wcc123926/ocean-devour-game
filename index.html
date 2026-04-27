@@ -63,6 +63,75 @@
             </div>
         </div>
 
+        <div class="fish-type-panel hidden" id="fishTypePanel">
+            <div class="fish-type-info">
+                <span class="fish-type-icon" id="fishTypeIcon">🐟</span>
+                <span class="fish-type-name" id="fishTypeName">普通鱼</span>
+            </div>
+        </div>
+
+        <div class="skill-panel hidden" id="skillPanel">
+            <div class="skill-container" id="skill1Container">
+                <div class="skill-indicator" id="skill1Indicator">
+                    <div class="skill-icon">⚔️</div>
+                    <div class="skill-name" id="skill1Name">突进</div>
+                    <div class="skill-cooldown" id="skill1Cooldown">J</div>
+                    <div class="skill-cooldown-overlay" id="skill1CooldownOverlay"></div>
+                </div>
+            </div>
+            <div class="skill-container" id="skill2Container">
+                <div class="skill-indicator" id="skill2Indicator">
+                    <div class="skill-icon">💥</div>
+                    <div class="skill-name" id="skill2Name">膨胀</div>
+                    <div class="skill-cooldown" id="skill2Cooldown">K</div>
+                    <div class="skill-cooldown-overlay" id="skill2CooldownOverlay"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-hint-left" id="controlHintLeft">
+            <div class="hint-title">移动</div>
+            <div class="hint-keys">
+                <span class="key-btn">W</span>
+                <span class="key-hint">上</span>
+            </div>
+            <div class="hint-keys">
+                <span class="key-btn">A</span>
+                <span class="key-btn">S</span>
+                <span class="key-btn">D</span>
+            </div>
+            <div class="hint-keys">
+                <span class="key-hint">左</span>
+                <span class="key-hint">下</span>
+                <span class="key-hint">右</span>
+            </div>
+            <div class="hint-or">或 鼠标/触屏</div>
+        </div>
+
+        <div class="control-hint-right" id="controlHintRight">
+            <div class="hint-row">
+                <span class="key-btn-small">空格</span>
+                <span class="hint-text">加速</span>
+            </div>
+            <div class="hint-row" id="skillHint1">
+                <span class="key-btn-small">J</span>
+                <span class="hint-text" id="skillHintText1">突进</span>
+            </div>
+            <div class="hint-row" id="skillHint2">
+                <span class="key-btn-small">K</span>
+                <span class="hint-text" id="skillHintText2">膨胀</span>
+            </div>
+        </div>
+
+        <div class="skill-cooldown-notification hidden" id="skillCooldownNotification">
+            <span class="cooldown-notice-text">技能冷却中</span>
+            <span class="cooldown-notice-time" id="cooldownNoticeTime">--</span>
+        </div>
+
+        <div class="skill-active-notification hidden" id="skillActiveNotification">
+            <span class="skill-active-text" id="skillActiveText">技能激活！</span>
+        </div>
+
         <div class="screen-notification hidden" id="screenNotification"></div>
         <div class="shield-warning hidden" id="shieldWarning"></div>
 
@@ -91,6 +160,69 @@
                     <button class="difficulty-btn" data-difficulty="hard">
                         <div class="diff-name">🔥 困难</div>
                         <div class="diff-desc">敌人多，成长慢</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="fish-selector">
+                <div class="selector-title">选择鱼类</div>
+                <div class="fish-options">
+                    <button class="fish-btn active" data-fish="normal">
+                        <div class="fish-preview">
+                            <div class="fish-emoji">🐟</div>
+                        </div>
+                        <div class="fish-info">
+                            <div class="fish-name">普通鱼</div>
+                            <div class="fish-type-label passive">均衡型</div>
+                        </div>
+                        <div class="fish-desc">
+                            <div class="desc-line">各项属性均衡</div>
+                            <div class="desc-line">适合新手体验</div>
+                        </div>
+                    </button>
+                    <button class="fish-btn" data-fish="whale_shark">
+                        <div class="fish-preview">
+                            <div class="fish-emoji">🦈</div>
+                        </div>
+                        <div class="fish-info">
+                            <div class="fish-name">鲸鲨</div>
+                            <div class="fish-type-label passive">被动技能</div>
+                        </div>
+                        <div class="fish-desc">
+                            <div class="desc-line highlight">初始体型 +50%</div>
+                            <div class="desc-line dim">移动速度 -20%</div>
+                        </div>
+                    </button>
+                    <button class="fish-btn" data-fish="sword_fish">
+                        <div class="fish-preview">
+                            <div class="fish-emoji">🐡</div>
+                        </div>
+                        <div class="fish-info">
+                            <div class="fish-name">剑鱼</div>
+                            <div class="fish-type-label active">主动技能</div>
+                            <div class="skill-key-badge">J</div>
+                        </div>
+                        <div class="fish-desc">
+                            <div class="desc-line highlight">按J突进</div>
+                            <div class="desc-line">吃掉路径上所有可吞噬的鱼</div>
+                            <div class="desc-line cooldown">冷却: 15秒</div>
+                        </div>
+                    </button>
+                    <button class="fish-btn" data-fish="puffer_fish">
+                        <div class="fish-preview">
+                            <div class="fish-emoji">🐡</div>
+                        </div>
+                        <div class="fish-info">
+                            <div class="fish-name">河豚</div>
+                            <div class="fish-type-label active">主动技能</div>
+                            <div class="skill-key-badge">K</div>
+                        </div>
+                        <div class="fish-desc">
+                            <div class="desc-line highlight">按K膨胀</div>
+                            <div class="desc-line">体型+80%，可吃比膨胀后小的鱼</div>
+                            <div class="desc-line dim">期间速度-50%</div>
+                            <div class="desc-line cooldown">冷却: 15秒</div>
+                        </div>
                     </button>
                 </div>
             </div>
@@ -144,6 +276,14 @@
             <div class="overlay-subtitle" id="gameOverReason">你被更大的鱼吃掉了！</div>
             <div class="death-cause" id="deathCause"></div>
             
+            <div class="fish-used-panel" id="fishUsedPanel">
+                <div class="fish-used-icon" id="fishUsedIcon">🐟</div>
+                <div class="fish-used-info">
+                    <div class="fish-used-name" id="fishUsedName">普通鱼</div>
+                    <div class="fish-used-type" id="fishUsedType">均衡型</div>
+                </div>
+            </div>
+            
             <div class="stats-summary">
                 <div class="stat-summary-item">
                     <span class="summary-icon">🏆</span>
@@ -181,6 +321,22 @@
                     <div class="summary-label">最大体型</div>
                 </div>
             </div>
+            
+            <div class="skill-stats-panel" id="skillStatsPanel">
+                <div class="skill-stats-title">技能使用统计</div>
+                <div class="skill-stats-content">
+                    <div class="skill-stat-item" id="skillStat1">
+                        <span class="skill-stat-icon">⚔️</span>
+                        <span class="skill-stat-name" id="skillStatName1">突进</span>
+                        <span class="skill-stat-count" id="skillStatCount1">0次</span>
+                    </div>
+                    <div class="skill-stat-item" id="skillStat2">
+                        <span class="skill-stat-icon">💥</span>
+                        <span class="skill-stat-name" id="skillStatName2">膨胀</span>
+                        <span class="skill-stat-count" id="skillStatCount2">0次</span>
+                    </div>
+                </div>
+            </div>
 
             <button class="game-button" id="restartButton">再来一次</button>
         </div>
@@ -191,10 +347,22 @@
                     <div class="joystick-stick" id="joystickStick"></div>
                 </div>
             </div>
-            <button class="boost-btn" id="boostBtn">
-                <span class="boost-icon">⚡</span>
-                <span class="boost-text">加速</span>
-            </button>
+            <div class="mobile-action-buttons">
+                <button class="boost-btn" id="boostBtn">
+                    <span class="boost-icon">⚡</span>
+                    <span class="boost-text">加速</span>
+                </button>
+                <button class="skill-btn hidden" id="skill1Btn">
+                    <span class="skill-btn-icon">⚔️</span>
+                    <span class="skill-btn-text" id="skill1BtnText">突进</span>
+                    <div class="skill-btn-cooldown" id="skill1BtnCooldown"></div>
+                </button>
+                <button class="skill-btn hidden" id="skill2Btn">
+                    <span class="skill-btn-icon">💥</span>
+                    <span class="skill-btn-text" id="skill2BtnText">膨胀</span>
+                    <div class="skill-btn-cooldown" id="skill2BtnCooldown"></div>
+                </button>
+            </div>
         </div>
 
         <div class="controls-hint">

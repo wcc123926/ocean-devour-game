@@ -1,9 +1,13 @@
 window.Player = class Player {
-    constructor(x, y, size) {
+    constructor(x, y, size, fishType = window.FishType.NORMAL) {
         this.x = x;
         this.y = y;
-        this.size = size;
-        this.baseSpeed = window.CONFIG.playerBaseSpeed;
+        this.fishType = fishType;
+        this.fishConfig = window.CONFIG.fishTypes[fishType];
+        
+        this.baseSize = this.fishConfig.baseSize;
+        this.size = Math.max(size, this.baseSize);
+        this.baseSpeed = this.fishConfig.baseSpeed;
         this.direction = 0;
         this.hasSpeedBoost = false;
         this.speedBoostDuration = 0;
@@ -14,12 +18,53 @@ window.Player = class Player {
         this.currentSpeed = this.baseSpeed;
         this.shieldPulse = 0;
         this.speedTrails = [];
-        this.previousSize = size;
+        this.previousSize = this.size;
         this.isInvulnerable = false;
         this.invulnerabilityDuration = 0;
         this.invulnerabilityFlashRate = 0.1;
         this.invulnerabilityFlashTimer = 0;
         this.showPlayer = true;
+        
+        this.isDashing = false;
+        this.dashDuration = 0;
+        this.dashCooldown = 0;
+        this.dashDirection = 0;
+        this.dashStartX = 0;
+        this.dashStartY = 0;
+        
+        this.isInflated = false;
+        this.inflateDuration = 0;
+        this.inflateCooldown = 0;
+        this.inflateAnimationPhase = 0;
+        this.spikePhase = 0;
+    }
+
+    getEffectiveSize() {
+        if (this.isInflated && this.fishType === window.FishType.PUFFER_FISH) {
+            return this.size * this.fishConfig.inflateMultiplier;
+        }
+        return this.size;
+    }
+
+    getEffectiveSpeed() {
+        let speed = this.baseSpeed;
+        
+        const sizePenalty = 1 - (this.size - window.CONFIG.playerBaseSize) / window.CONFIG.playerMaxSize * 0.4;
+        speed *= Math.max(0.5, sizePenalty);
+
+        if (this.hasSpeedBoost) {
+            speed *= window.CONFIG.speedBoostMultiplier;
+        }
+        
+        if (this.isDashing && this.fishType === window.FishType.SWORD_FISH) {
+            speed = this.fishConfig.dashSpeed;
+        }
+        
+        if (this.isInflated && this.fishType === window.FishType.PUFFER_FISH) {
+            speed *= this.fishConfig.inflateSpeedMultiplier;
+        }
+        
+        return speed;
     }
 
     update(deltaTime, mouse, canvas, keys) {
@@ -58,21 +103,43 @@ window.Player = class Player {
             }
         }
 
-        let currentSpeed = this.baseSpeed;
-        
-        const sizePenalty = 1 - (this.size - window.CONFIG.playerBaseSize) / window.CONFIG.playerMaxSize * 0.4;
-        currentSpeed *= Math.max(0.5, sizePenalty);
-
-        if (this.hasSpeedBoost) {
-            currentSpeed *= window.CONFIG.speedBoostMultiplier;
+        if (this.dashCooldown > 0) {
+            this.dashCooldown -= deltaTime * 1000;
+        }
+        if (this.isDashing) {
+            this.dashDuration -= deltaTime * 1000;
+            if (this.dashDuration <= 0) {
+                this.isDashing = false;
+                this.dashDuration = 0;
+            }
         }
 
+        if (this.inflateCooldown > 0) {
+            this.inflateCooldown -= deltaTime * 1000;
+        }
+        if (this.isInflated) {
+            this.inflateDuration -= deltaTime * 1000;
+            this.inflateAnimationPhase += deltaTime * 5;
+            this.spikePhase += deltaTime * 3;
+            if (this.inflateDuration <= 0) {
+                this.isInflated = false;
+                this.inflateDuration = 0;
+                this.inflateAnimationPhase = 0;
+            }
+        }
+
+        let currentSpeed = this.getEffectiveSpeed();
         this.currentSpeed = currentSpeed;
 
         const controlMode = window.GameStatus.controlMode;
         let isMoving = false;
 
-        if (controlMode === window.ControlMode.KEYBOARD && keys) {
+        if (this.isDashing && this.fishType === window.FishType.SWORD_FISH) {
+            this.x += Math.cos(this.dashDirection) * currentSpeed;
+            this.y += Math.sin(this.dashDirection) * currentSpeed;
+            this.addSpeedTrail();
+            isMoving = true;
+        } else if (controlMode === window.ControlMode.KEYBOARD && keys) {
             let dx = 0;
             let dy = 0;
 
@@ -118,8 +185,9 @@ window.Player = class Player {
             this.addSpeedTrail();
         }
 
-        this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));
-        this.y = Math.max(this.size, Math.min(canvas.height - this.size, this.y));
+        const effectiveSize = this.getEffectiveSize();
+        this.x = Math.max(effectiveSize, Math.min(canvas.width - effectiveSize, this.x));
+        this.y = Math.max(effectiveSize, Math.min(canvas.height - effectiveSize, this.y));
 
         this.tailWag += 0.2 + (currentSpeed / this.baseSpeed) * 0.1;
         this.shieldPulse += 0.1;
@@ -129,11 +197,63 @@ window.Player = class Player {
         this.previousSize = this.size;
     }
 
+    useSkill1() {
+        if (this.fishType === window.FishType.SWORD_FISH) {
+            if (this.dashCooldown > 0 || this.isDashing) return false;
+            this.isDashing = true;
+            this.dashDuration = this.fishConfig.dashDuration;
+            this.dashCooldown = this.fishConfig.skillCooldown;
+            this.dashDirection = this.direction;
+            this.dashStartX = this.x;
+            this.dashStartY = this.y;
+            window.GameStatus.incrementSkill1Used();
+            return true;
+        }
+        return false;
+    }
+
+    useSkill2() {
+        if (this.fishType === window.FishType.PUFFER_FISH) {
+            if (this.inflateCooldown > 0 || this.isInflated) return false;
+            this.isInflated = true;
+            this.inflateDuration = this.fishConfig.inflateDuration;
+            this.inflateCooldown = this.fishConfig.skillCooldown;
+            this.inflateAnimationPhase = 0;
+            window.GameStatus.incrementSkill2Used();
+            return true;
+        }
+        return false;
+    }
+
+    getSkill1CooldownPercent() {
+        if (this.fishType !== window.FishType.SWORD_FISH) return 100;
+        if (this.dashCooldown <= 0) return 100;
+        const config = this.fishConfig;
+        return Math.max(0, 100 - (this.dashCooldown / config.skillCooldown * 100));
+    }
+
+    getSkill2CooldownPercent() {
+        if (this.fishType !== window.FishType.PUFFER_FISH) return 100;
+        if (this.inflateCooldown <= 0) return 100;
+        const config = this.fishConfig;
+        return Math.max(0, 100 - (this.inflateCooldown / config.skillCooldown * 100));
+    }
+
+    getSkill1RemainingTime() {
+        if (this.fishType !== window.FishType.SWORD_FISH) return 0;
+        return Math.max(0, Math.ceil(this.dashCooldown / 1000));
+    }
+
+    getSkill2RemainingTime() {
+        if (this.fishType !== window.FishType.PUFFER_FISH) return 0;
+        return Math.max(0, Math.ceil(this.inflateCooldown / 1000));
+    }
+
     addSpeedTrail() {
         this.speedTrails.push({
-            x: this.x - Math.cos(this.direction) * this.size * 0.8,
-            y: this.y - Math.sin(this.direction) * this.size * 0.8,
-            size: this.size * 0.6,
+            x: this.x - Math.cos(this.direction) * this.getEffectiveSize() * 0.8,
+            y: this.y - Math.sin(this.direction) * this.getEffectiveSize() * 0.8,
+            size: this.getEffectiveSize() * 0.6,
             alpha: 0.6,
             direction: this.direction
         });
@@ -176,7 +296,8 @@ window.Player = class Player {
         const dx = this.x - object.x;
         const dy = this.y - object.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        const minDistance = (this.size + object.size) * 0.8;
+        const effectiveSize = this.getEffectiveSize();
+        const minDistance = (effectiveSize + object.size) * 0.8;
         return distance < minDistance;
     }
 
@@ -199,97 +320,245 @@ window.Player = class Player {
             return;
         }
 
+        const effectiveSize = this.getEffectiveSize();
+
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.direction);
 
         if (this.isInvulnerable) {
-            this.renderInvulnerabilityEffect(ctx);
+            this.renderInvulnerabilityEffect(ctx, effectiveSize);
         }
 
         if (this.hasShield) {
-            this.renderShield(ctx);
+            this.renderShield(ctx, effectiveSize);
         }
 
-        if (this.hasSpeedBoost) {
-            this.renderSpeedEffect(ctx);
+        if (this.hasSpeedBoost || this.isDashing) {
+            this.renderSpeedEffect(ctx, effectiveSize);
         }
 
+        if (this.isDashing && this.fishType === window.FishType.SWORD_FISH) {
+            this.renderDashEffect(ctx, effectiveSize);
+        }
+
+        if (this.isInflated && this.fishType === window.FishType.PUFFER_FISH) {
+            this.renderPufferSpikes(ctx, effectiveSize);
+        }
+
+        this.renderFish(ctx, effectiveSize);
+
+        ctx.restore();
+    }
+
+    renderFish(ctx, effectiveSize) {
         const stage = window.GameUtils.getCurrentStageBySize(this.size);
-        const bodyColor = stage ? stage.sizeColor : '#64b5f6';
-        const darkColor = this.getDarkerColor(bodyColor);
-        const lightColor = this.getLighterColor(bodyColor);
+        let bodyColor, darkColor, lightColor;
+        
+        if (this.fishType === window.FishType.NORMAL) {
+            bodyColor = stage ? stage.sizeColor : this.fishConfig.sizeColor;
+            darkColor = this.getDarkerColor(bodyColor);
+            lightColor = this.getLighterColor(bodyColor);
+        } else {
+            bodyColor = this.fishConfig.sizeColor;
+            darkColor = this.fishConfig.darkColor;
+            lightColor = this.fishConfig.lightColor;
+        }
 
         const bodyGradient = ctx.createRadialGradient(
-            -this.size * 0.2, -this.size * 0.2, 0,
-            0, 0, this.size
+            -effectiveSize * 0.2, -effectiveSize * 0.2, 0,
+            0, 0, effectiveSize
         );
         bodyGradient.addColorStop(0, lightColor);
         bodyGradient.addColorStop(0.7, bodyColor);
         bodyGradient.addColorStop(1, darkColor);
 
+        switch (this.fishType) {
+            case window.FishType.SWORD_FISH:
+                this.renderSwordFish(ctx, effectiveSize, bodyGradient, darkColor, lightColor);
+                break;
+            case window.FishType.WHALE_SHARK:
+                this.renderWhaleShark(ctx, effectiveSize, bodyGradient, darkColor, lightColor);
+                break;
+            case window.FishType.PUFFER_FISH:
+                this.renderPufferFish(ctx, effectiveSize, bodyGradient, darkColor, lightColor);
+                break;
+            default:
+                this.renderNormalFish(ctx, effectiveSize, bodyGradient, darkColor, lightColor);
+        }
+    }
+
+    renderNormalFish(ctx, effectiveSize, bodyGradient, darkColor, lightColor) {
         ctx.beginPath();
-        ctx.ellipse(0, 0, this.size * 0.8, this.size * 0.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, effectiveSize * 0.8, effectiveSize * 0.5, 0, 0, Math.PI * 2);
         ctx.fillStyle = bodyGradient;
         ctx.fill();
         ctx.strokeStyle = darkColor;
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        const tailWagOffset = Math.sin(this.tailWag) * this.size * 0.15;
+        this.renderFinsAndTail(ctx, effectiveSize, lightColor, darkColor);
+        this.renderEye(ctx, effectiveSize, darkColor);
+    }
+
+    renderSwordFish(ctx, effectiveSize, bodyGradient, darkColor, lightColor) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, effectiveSize * 0.85, effectiveSize * 0.4, 0, 0, Math.PI * 2);
+        ctx.fillStyle = bodyGradient;
+        ctx.fill();
+        ctx.strokeStyle = darkColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(effectiveSize * 0.6, 0);
+        ctx.lineTo(effectiveSize * 1.5, 0);
+        ctx.strokeStyle = darkColor;
+        ctx.lineWidth = effectiveSize * 0.08;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(effectiveSize * 1.4, 0, effectiveSize * 0.08, effectiveSize * 0.03, 0, 0, Math.PI * 2);
+        ctx.fillStyle = lightColor;
+        ctx.fill();
+
+        this.renderFinsAndTail(ctx, effectiveSize, lightColor, darkColor);
+        this.renderEye(ctx, effectiveSize, darkColor);
+    }
+
+    renderWhaleShark(ctx, effectiveSize, bodyGradient, darkColor, lightColor) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, effectiveSize * 0.9, effectiveSize * 0.55, 0, 0, Math.PI * 2);
+        ctx.fillStyle = bodyGradient;
+        ctx.fill();
+        ctx.strokeStyle = darkColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        const spotPositions = [
+            [-0.3, -0.2], [0.2, -0.25], [0.4, 0.1],
+            [-0.4, 0.15], [0.1, 0.25], [-0.1, -0.1]
+        ];
+        spotPositions.forEach(pos => {
+            ctx.beginPath();
+            ctx.arc(effectiveSize * pos[0], effectiveSize * pos[1], effectiveSize * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        this.renderFinsAndTail(ctx, effectiveSize, lightColor, darkColor);
+        this.renderEye(ctx, effectiveSize, darkColor);
+    }
+
+    renderPufferFish(ctx, effectiveSize, bodyGradient, darkColor, lightColor) {
+        const baseRadius = effectiveSize * 0.7;
+        
+        if (this.isInflated) {
+            const pulse = Math.sin(this.inflateAnimationPhase) * 0.05;
+            ctx.beginPath();
+            ctx.arc(0, 0, baseRadius * (1 + pulse), 0, Math.PI * 2);
+        } else {
+            ctx.beginPath();
+            ctx.ellipse(0, 0, effectiveSize * 0.7, effectiveSize * 0.55, 0, 0, Math.PI * 2);
+        }
+        ctx.fillStyle = bodyGradient;
+        ctx.fill();
+        ctx.strokeStyle = darkColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        if (!this.isInflated) {
+            this.renderFinsAndTail(ctx, effectiveSize, lightColor, darkColor);
+        }
+        this.renderEye(ctx, effectiveSize, darkColor);
+    }
+
+    renderPufferSpikes(ctx, effectiveSize) {
+        const config = this.fishConfig;
+        const spikeCount = 16;
+        const innerRadius = effectiveSize * 0.7;
+        const outerRadius = effectiveSize * 0.95;
+        const pulseOffset = Math.sin(this.spikePhase) * 5;
+
+        for (let i = 0; i < spikeCount; i++) {
+            const angle = (Math.PI * 2 / spikeCount) * i;
+            const innerX = Math.cos(angle) * innerRadius;
+            const innerY = Math.sin(angle) * innerRadius;
+            const outerX = Math.cos(angle) * (outerRadius + pulseOffset);
+            const outerY = Math.sin(angle) * (outerRadius + pulseOffset);
+
+            ctx.beginPath();
+            ctx.moveTo(innerX - Math.cos(angle + 0.15) * 5, innerY - Math.sin(angle + 0.15) * 5);
+            ctx.lineTo(outerX, outerY);
+            ctx.lineTo(innerX - Math.cos(angle - 0.15) * 5, innerY - Math.sin(angle - 0.15) * 5);
+            ctx.closePath();
+            ctx.fillStyle = this.fishConfig.darkColor;
+            ctx.fill();
+            ctx.strokeStyle = this.fishConfig.lightColor;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    }
+
+    renderFinsAndTail(ctx, effectiveSize, lightColor, darkColor) {
+        const tailWagOffset = Math.sin(this.tailWag) * effectiveSize * 0.15;
         
         ctx.beginPath();
-        ctx.moveTo(-this.size * 0.7, 0);
+        ctx.moveTo(-effectiveSize * 0.7, 0);
         ctx.quadraticCurveTo(
-            -this.size * 1.2, -this.size * 0.4 + tailWagOffset,
-            -this.size * 1.5, -this.size * 0.3 + tailWagOffset
+            -effectiveSize * 1.2, -effectiveSize * 0.4 + tailWagOffset,
+            -effectiveSize * 1.5, -effectiveSize * 0.3 + tailWagOffset
         );
         ctx.quadraticCurveTo(
-            -this.size * 1.3, 0,
-            -this.size * 1.5, this.size * 0.3 - tailWagOffset
+            -effectiveSize * 1.3, 0,
+            -effectiveSize * 1.5, effectiveSize * 0.3 - tailWagOffset
         );
         ctx.quadraticCurveTo(
-            -this.size * 1.2, this.size * 0.4 - tailWagOffset,
-            -this.size * 0.7, 0
+            -effectiveSize * 1.2, effectiveSize * 0.4 - tailWagOffset,
+            -effectiveSize * 0.7, 0
         );
         ctx.fillStyle = lightColor;
         ctx.fill();
 
         const dorsalWag = Math.sin(this.tailWag * 0.8) * 0.1;
         ctx.beginPath();
-        ctx.moveTo(0, -this.size * 0.45);
+        ctx.moveTo(0, -effectiveSize * 0.45);
         ctx.quadraticCurveTo(
-            -this.size * 0.3 + dorsalWag * this.size, -this.size * 0.8,
-            -this.size * 0.1 + dorsalWag * this.size * 0.5, -this.size * 0.6
+            -effectiveSize * 0.3 + dorsalWag * effectiveSize, -effectiveSize * 0.8,
+            -effectiveSize * 0.1 + dorsalWag * effectiveSize * 0.5, -effectiveSize * 0.6
         );
-        ctx.lineTo(0, -this.size * 0.45);
+        ctx.lineTo(0, -effectiveSize * 0.45);
         ctx.fillStyle = lightColor;
         ctx.fill();
 
         ctx.beginPath();
         ctx.ellipse(
-            this.size * 0.1, 
-            this.size * 0.35, 
-            this.size * 0.2, 
-            this.size * 0.1, 
+            effectiveSize * 0.1, 
+            effectiveSize * 0.35, 
+            effectiveSize * 0.2, 
+            effectiveSize * 0.1, 
             Math.PI * 0.3, 
             0, 
             Math.PI * 2
         );
         ctx.fillStyle = lightColor;
         ctx.fill();
+    }
 
+    renderEye(ctx, effectiveSize, darkColor) {
         const eyeGlow = this.hasSpeedBoost ? 0.3 : 0.1;
-        const eyeGradient = ctx.createRadialGradient(
-            this.size * 0.4, -this.size * 0.15, 0,
-            this.size * 0.4, -this.size * 0.15, this.size * 0.15
-        );
+        const eyeSize = effectiveSize * 0.15;
+        const eyeX = effectiveSize * 0.4;
+        const eyeY = -effectiveSize * 0.15;
+
+        const eyeGradient = ctx.createRadialGradient(eyeX, eyeY, 0, eyeX, eyeY, eyeSize);
         eyeGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
         eyeGradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.8)');
         eyeGradient.addColorStop(1, `rgba(255, 255, 255, ${eyeGlow})`);
 
         ctx.beginPath();
-        ctx.arc(this.size * 0.4, -this.size * 0.15, this.size * 0.15, 0, Math.PI * 2);
+        ctx.arc(eyeX, eyeY, eyeSize, 0, Math.PI * 2);
         ctx.fillStyle = eyeGradient;
         ctx.fill();
         ctx.strokeStyle = '#333';
@@ -297,34 +566,61 @@ window.Player = class Player {
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(this.size * 0.45, -this.size * 0.15, this.size * 0.08, 0, Math.PI * 2);
+        ctx.arc(eyeX + effectiveSize * 0.05, eyeY, effectiveSize * 0.08, 0, Math.PI * 2);
         ctx.fillStyle = '#333';
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(this.size * 0.48, -this.size * 0.18, this.size * 0.03, 0, Math.PI * 2);
+        ctx.arc(eyeX + effectiveSize * 0.08, eyeY - effectiveSize * 0.03, effectiveSize * 0.03, 0, Math.PI * 2);
         ctx.fillStyle = 'white';
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(this.size * 0.65, 0, this.size * 0.1, -Math.PI * 0.3, Math.PI * 0.3);
+        ctx.arc(effectiveSize * 0.65, 0, effectiveSize * 0.1, -Math.PI * 0.3, Math.PI * 0.3);
         ctx.strokeStyle = darkColor;
         ctx.lineWidth = 2;
         ctx.stroke();
-
-        ctx.restore();
     }
 
-    renderInvulnerabilityEffect(ctx) {
+    renderDashEffect(ctx, effectiveSize) {
+        const dashGradient = ctx.createRadialGradient(
+            -effectiveSize * 0.5, 0, 0,
+            -effectiveSize * 2, 0, effectiveSize * 1.2
+        );
+        dashGradient.addColorStop(0, 'rgba(255, 112, 67, 0.4)');
+        dashGradient.addColorStop(0.5, 'rgba(255, 87, 34, 0.2)');
+        dashGradient.addColorStop(1, 'rgba(255, 87, 34, 0)');
+
+        ctx.beginPath();
+        ctx.moveTo(-effectiveSize * 0.3, -effectiveSize * 0.5);
+        ctx.lineTo(-effectiveSize * 3, -effectiveSize * 0.6);
+        ctx.lineTo(-effectiveSize * 3, effectiveSize * 0.6);
+        ctx.lineTo(-effectiveSize * 0.3, effectiveSize * 0.5);
+        ctx.closePath();
+        ctx.fillStyle = dashGradient;
+        ctx.fill();
+
+        for (let i = 0; i < 5; i++) {
+            const yOffset = (i - 2) * effectiveSize * 0.2;
+            ctx.beginPath();
+            ctx.moveTo(-effectiveSize * 0.8, yOffset);
+            ctx.lineTo(-effectiveSize * 2.5, yOffset);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    renderInvulnerabilityEffect(ctx, effectiveSize) {
         const flashAlpha = 0.3 + Math.sin(this.shieldPulse * 3) * 0.2;
         
-        const invulnerabilityGradient = ctx.createRadialGradient(0, 0, this.size * 0.5, 0, 0, this.size * 1.5);
+        const invulnerabilityGradient = ctx.createRadialGradient(0, 0, effectiveSize * 0.5, 0, 0, effectiveSize * 1.5);
         invulnerabilityGradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
         invulnerabilityGradient.addColorStop(0.6, `rgba(255, 215, 0, ${flashAlpha * 0.3})`);
         invulnerabilityGradient.addColorStop(1, `rgba(255, 215, 0, ${flashAlpha * 0.5})`);
 
         ctx.beginPath();
-        ctx.arc(0, 0, this.size * 1.5, 0, Math.PI * 2);
+        ctx.arc(0, 0, effectiveSize * 1.5, 0, Math.PI * 2);
         ctx.fillStyle = invulnerabilityGradient;
         ctx.fill();
         
@@ -354,15 +650,15 @@ window.Player = class Player {
         });
     }
 
-    renderShield(ctx) {
-        const shieldSize = this.size * 1.4;
+    renderShield(ctx, effectiveSize) {
+        const shieldSize = effectiveSize * 1.4;
         const pulseAmount = Math.sin(this.shieldPulse * 2) * 0.1;
         const currentShieldSize = shieldSize * (1 + pulseAmount);
         
         const isWarning = this.shieldDuration < 3000;
         const baseAlpha = isWarning ? 0.4 + Math.sin(this.shieldPulse * 5) * 0.3 : 0.6;
         
-        const shieldGradient = ctx.createRadialGradient(0, 0, this.size, 0, 0, currentShieldSize);
+        const shieldGradient = ctx.createRadialGradient(0, 0, effectiveSize, 0, 0, currentShieldSize);
         shieldGradient.addColorStop(0, `rgba(100, 181, 246, 0)`);
         shieldGradient.addColorStop(0.6, `rgba(100, 181, 246, ${baseAlpha * 0.5})`);
         shieldGradient.addColorStop(1, `rgba(100, 181, 246, ${baseAlpha})`);
@@ -397,35 +693,35 @@ window.Player = class Player {
         }
     }
 
-    renderSpeedEffect(ctx) {
+    renderSpeedEffect(ctx, effectiveSize) {
         const speedLevel = this.currentSpeed / this.baseSpeed;
         const intensity = Math.min((speedLevel - 1) / 0.8, 1);
         
         const effectGradient = ctx.createRadialGradient(
-            -this.size * 0.5, 0, 0,
-            -this.size * 1.2, 0, this.size * 0.8
+            -effectiveSize * 0.5, 0, 0,
+            -effectiveSize * 1.2, 0, effectiveSize * 0.8
         );
         effectGradient.addColorStop(0, `rgba(255, 215, 0, ${0.3 * intensity})`);
         effectGradient.addColorStop(0.5, `rgba(255, 193, 7, ${0.2 * intensity})`);
         effectGradient.addColorStop(1, 'rgba(255, 152, 0, 0)');
 
         ctx.beginPath();
-        ctx.moveTo(-this.size * 0.3, -this.size * 0.3);
-        ctx.lineTo(-this.size * 1.8 - intensity * this.size, -this.size * 0.5);
-        ctx.lineTo(-this.size * 1.8 - intensity * this.size, this.size * 0.5);
-        ctx.lineTo(-this.size * 0.3, this.size * 0.3);
+        ctx.moveTo(-effectiveSize * 0.3, -effectiveSize * 0.3);
+        ctx.lineTo(-effectiveSize * 1.8 - intensity * effectiveSize, -effectiveSize * 0.5);
+        ctx.lineTo(-effectiveSize * 1.8 - intensity * effectiveSize, effectiveSize * 0.5);
+        ctx.lineTo(-effectiveSize * 0.3, effectiveSize * 0.3);
         ctx.closePath();
         ctx.fillStyle = effectGradient;
         ctx.fill();
         
         const streakCount = 3 + Math.floor(intensity * 3);
         for (let i = 0; i < streakCount; i++) {
-            const yOffset = (i - streakCount / 2) * this.size * 0.25;
-            const length = this.size * (0.8 + Math.random() * 0.4 + intensity * 0.5);
+            const yOffset = (i - streakCount / 2) * effectiveSize * 0.25;
+            const length = effectiveSize * (0.8 + Math.random() * 0.4 + intensity * 0.5);
             
             ctx.beginPath();
-            ctx.moveTo(-this.size * 0.5, yOffset);
-            ctx.lineTo(-this.size * 0.5 - length, yOffset + (Math.random() - 0.5) * this.size * 0.2);
+            ctx.moveTo(-effectiveSize * 0.5, yOffset);
+            ctx.lineTo(-effectiveSize * 0.5 - length, yOffset + (Math.random() - 0.5) * effectiveSize * 0.2);
             ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 + Math.random() * 0.2})`;
             ctx.lineWidth = 1 + Math.random() * 2;
             ctx.stroke();

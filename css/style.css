@@ -890,6 +890,579 @@ body {
   }
 }
 
+.fish-selector {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.fish-options {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.fish-btn {
+  background: rgba(100, 181, 246, 0.15);
+  border: 2px solid rgba(100, 181, 246, 0.3);
+  border-radius: 12px;
+  padding: 15px 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.fish-btn:hover {
+  background: rgba(100, 181, 246, 0.25);
+  border-color: rgba(100, 181, 246, 0.6);
+  transform: translateY(-3px);
+}
+
+.fish-btn.active {
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.35) 0%, rgba(33, 150, 243, 0.35) 100%);
+  border-color: #64b5f6;
+  box-shadow: 0 0 20px rgba(100, 181, 246, 0.5);
+}
+
+.fish-btn[data-fish="whale_shark"].active {
+  border-color: #7986cb;
+  box-shadow: 0 0 20px rgba(121, 134, 203, 0.5);
+}
+
+.fish-btn[data-fish="sword_fish"].active {
+  border-color: #ff7043;
+  box-shadow: 0 0 20px rgba(255, 112, 67, 0.5);
+}
+
+.fish-btn[data-fish="puffer_fish"].active {
+  border-color: #ab47bc;
+  box-shadow: 0 0 20px rgba(171, 71, 188, 0.5);
+}
+
+.fish-preview {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+}
+
+.fish-emoji {
+  font-size: 36px;
+}
+
+.fish-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.fish-name {
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.fish-type-label {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.fish-type-label.passive {
+  background: rgba(76, 175, 80, 0.3);
+  color: #81c784;
+}
+
+.fish-type-label.active {
+  background: rgba(255, 152, 0, 0.3);
+  color: #ffb74d;
+}
+
+.skill-key-badge {
+  font-size: 11px;
+  background: rgba(255, 87, 34, 0.8);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.fish-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+}
+
+.desc-line {
+  font-size: 11px;
+  color: #90caf9;
+  text-align: center;
+}
+
+.desc-line.highlight {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.desc-line.dim {
+  color: #90a4ae;
+}
+
+.desc-line.cooldown {
+  color: #ff9800;
+  font-size: 10px;
+}
+
+.fish-type-panel {
+  position: absolute;
+  top: 10px;
+  right: 180px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.fish-type-panel.hidden {
+  display: none;
+}
+
+.fish-type-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  border-radius: 8px;
+  padding: 8px 12px;
+  border: 1px solid rgba(100, 181, 246, 0.3);
+}
+
+.fish-type-icon {
+  font-size: 24px;
+}
+
+.fish-type-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.skill-panel {
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  z-index: 10;
+  display: flex;
+  gap: 15px;
+}
+
+.skill-panel.hidden {
+  display: none;
+}
+
+.skill-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.skill-indicator {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.skill-indicator.ready {
+  border-color: #4caf50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.skill-indicator.active {
+  border-color: #ffd700;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  animation: skillActivePulse 0.5s ease-in-out infinite;
+}
+
+.skill-icon {
+  font-size: 20px;
+  z-index: 2;
+}
+
+.skill-name {
+  font-size: 9px;
+  color: #90caf9;
+  z-index: 2;
+}
+
+.skill-cooldown {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 9px;
+  color: #ff9800;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.skill-cooldown-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  transition: height 0.1s linear;
+}
+
+@keyframes skillActivePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.control-hint-left {
+  position: absolute;
+  bottom: 80px;
+  left: 20px;
+  z-index: 8;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  border-radius: 10px;
+  padding: 10px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-hint-left.hidden {
+  display: none;
+}
+
+.hint-title {
+  font-size: 11px;
+  color: #64b5f6;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.hint-keys {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.key-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: rgba(100, 181, 246, 0.3);
+  border: 1px solid rgba(100, 181, 246, 0.5);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.key-hint {
+  font-size: 9px;
+  color: #90a4ae;
+  text-align: center;
+  min-width: 24px;
+}
+
+.hint-or {
+  font-size: 9px;
+  color: #78909c;
+  text-align: center;
+  margin-top: 5px;
+}
+
+.control-hint-right {
+  position: absolute;
+  bottom: 80px;
+  right: 110px;
+  z-index: 8;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-hint-right.hidden {
+  display: none;
+}
+
+.hint-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.hint-row:last-child {
+  margin-bottom: 0;
+}
+
+.key-btn-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  background: rgba(100, 181, 246, 0.3);
+  border: 1px solid rgba(100, 181, 246, 0.5);
+  border-radius: 3px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 0 6px;
+}
+
+.hint-text {
+  font-size: 10px;
+  color: #90caf9;
+}
+
+.skill-cooldown-notification {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 40;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  padding: 10px 20px;
+  border: 1px solid rgba(255, 152, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skill-cooldown-notification.hidden {
+  display: none;
+}
+
+.cooldown-notice-text {
+  font-size: 14px;
+  color: #ff9800;
+}
+
+.cooldown-notice-time {
+  font-size: 16px;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.skill-active-notification {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 35;
+  pointer-events: none;
+}
+
+.skill-active-notification.hidden {
+  display: none;
+}
+
+.skill-active-text {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
+               0 0 40px rgba(255, 152, 0, 0.5);
+  animation: skillActivePop 0.4s ease-out;
+}
+
+@keyframes skillActivePop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.fish-used-panel {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(0, 100, 200, 0.2);
+  border: 1px solid rgba(100, 181, 246, 0.3);
+  border-radius: 10px;
+  padding: 12px 20px;
+  margin-bottom: 15px;
+}
+
+.fish-used-icon {
+  font-size: 42px;
+}
+
+.fish-used-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fish-used-name {
+  font-size: 18px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.fish-used-type {
+  font-size: 12px;
+  color: #90caf9;
+}
+
+.skill-stats-panel {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(100, 181, 246, 0.2);
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  min-width: 300px;
+}
+
+.skill-stats-title {
+  font-size: 13px;
+  color: #ffd700;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.skill-stats-content {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+
+.skill-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skill-stat-icon {
+  font-size: 20px;
+}
+
+.skill-stat-name {
+  font-size: 12px;
+  color: #90caf9;
+}
+
+.skill-stat-count {
+  font-size: 16px;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.mobile-action-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.skill-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.skill-btn.hidden {
+  display: none;
+}
+
+.skill-btn#skill1Btn {
+  background: linear-gradient(135deg, #ff7043 0%, #e64a19 100%);
+  border: 3px solid rgba(255, 112, 67, 0.8);
+  box-shadow: 0 0 15px rgba(255, 112, 67, 0.5);
+}
+
+.skill-btn#skill2Btn {
+  background: linear-gradient(135deg, #ab47bc 0%, #7b1fa2 100%);
+  border: 3px solid rgba(171, 71, 188, 0.8);
+  box-shadow: 0 0 15px rgba(171, 71, 188, 0.5);
+}
+
+.skill-btn:active,
+.skill-btn.active {
+  transform: scale(0.95);
+}
+
+.skill-btn.cooldown {
+  filter: grayscale(0.5);
+  opacity: 0.7;
+}
+
+.skill-btn-icon {
+  font-size: 24px;
+  z-index: 2;
+}
+
+.skill-btn-text {
+  font-size: 9px;
+  color: #fff;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.skill-btn-cooldown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  transition: height 0.1s linear;
+}
+
 @media (max-width: 768px) {
   .game-container {
     width: 100vw;
@@ -934,11 +1507,11 @@ body {
   }
 
   .overlay-title {
-    font-size: 32px;
+    font-size: 28px;
   }
 
   .overlay-subtitle {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .difficulty-options {
@@ -959,6 +1532,35 @@ body {
     min-width: 200px;
   }
 
+  .fish-options {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .fish-btn {
+    min-width: 220px;
+    flex-direction: row;
+    padding: 12px 15px;
+  }
+
+  .fish-preview {
+    width: 50px;
+    height: 50px;
+  }
+
+  .fish-emoji {
+    font-size: 28px;
+  }
+
+  .fish-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fish-desc {
+    align-items: flex-start;
+  }
+
   .instructions {
     font-size: 11px;
   }
@@ -969,27 +1571,108 @@ body {
   }
 
   .stats-summary {
-    gap: 10px;
+    gap: 8px;
   }
 
   .stat-summary-item {
-    min-width: 90px;
-    padding: 8px 10px;
+    min-width: 80px;
+    padding: 8px 8px;
   }
 
   .summary-icon {
-    font-size: 20px;
-  }
-
-  .summary-value {
     font-size: 18px;
   }
 
+  .summary-value {
+    font-size: 16px;
+  }
+
   .summary-label {
-    font-size: 10px;
+    font-size: 9px;
   }
 
   .controls-hint {
     display: none;
+  }
+
+  .control-hint-left,
+  .control-hint-right {
+    display: none;
+  }
+
+  .skill-panel {
+    display: none;
+  }
+
+  .fish-type-panel {
+    top: 5px;
+    right: 10px;
+  }
+
+  .fish-type-info {
+    padding: 6px 10px;
+  }
+
+  .fish-type-icon {
+    font-size: 20px;
+  }
+
+  .fish-type-name {
+    font-size: 11px;
+  }
+
+  .skill-stats-panel {
+    min-width: 250px;
+    padding: 10px 15px;
+  }
+
+  .skill-stat-item {
+    gap: 5px;
+  }
+
+  .skill-stat-icon {
+    font-size: 18px;
+  }
+
+  .skill-stat-name {
+    font-size: 10px;
+  }
+
+  .skill-stat-count {
+    font-size: 14px;
+  }
+
+  .mobile-action-buttons {
+    gap: 8px;
+  }
+
+  .skill-btn {
+    width: 60px;
+    height: 60px;
+  }
+
+  .skill-btn-icon {
+    font-size: 20px;
+  }
+
+  .skill-btn-text {
+    font-size: 8px;
+  }
+
+  .fish-used-panel {
+    padding: 10px 15px;
+    margin-bottom: 12px;
+  }
+
+  .fish-used-icon {
+    font-size: 36px;
+  }
+
+  .fish-used-name {
+    font-size: 16px;
+  }
+
+  .fish-used-type {
+    font-size: 11px;
   }
 }
