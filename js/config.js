@@ -16,6 +16,18 @@ window.DeathCause = {
     UNKNOWN: 'unknown'
 };
 
+window.FishType = {
+    NORMAL: 'normal',
+    WHALE_SHARK: 'whale_shark',
+    SWORD_FISH: 'sword_fish',
+    PUFFER_FISH: 'puffer_fish'
+};
+
+window.SkillType = {
+    PASSIVE: 'passive',
+    ACTIVE: 'active'
+};
+
 window.DifficultyConfig = {
     easy: {
         name: '简单',
@@ -130,5 +142,70 @@ window.CONFIG = {
     minRadius: 100,
     maxRadius: 200,
     warningPulseRate: 0.5
+  },
+
+  fishTypes: {
+    normal: {
+      name: '普通鱼',
+      type: window.FishType.NORMAL,
+      skillType: window.SkillType.PASSIVE,
+      description: '均衡型鱼类，各项属性均衡',
+      feature: '基础移动速度适中，适合新手体验',
+      baseSize: 25,
+      baseSpeed: 3,
+      sizeColor: '#64b5f6',
+      darkColor: '#1976d2',
+      lightColor: '#bbdefb'
+    },
+    whale_shark: {
+      name: '鲸鲨',
+      type: window.FishType.WHALE_SHARK,
+      skillType: window.SkillType.PASSIVE,
+      description: '被动技能鱼：开局体型更大，但移动稍慢',
+      feature: '初始体型+50%，移动速度-20%',
+      baseSize: 38,
+      baseSpeed: 2.4,
+      sizeMultiplier: 1.5,
+      speedMultiplier: 0.8,
+      sizeColor: '#7986cb',
+      darkColor: '#3949ab',
+      lightColor: '#c5cae9'
+    },
+    sword_fish: {
+      name: '剑鱼',
+      type: window.FishType.SWORD_FISH,
+      skillType: window.SkillType.ACTIVE,
+      skillKey: 'j',
+      skillName: '突进',
+      description: '主动技能鱼：按J键向当前方向突进',
+      feature: '突进时吃掉路径上所有可吞噬的鱼，冷却15秒',
+      baseSize: 25,
+      baseSpeed: 3.2,
+      dashSpeed: 15,
+      dashDuration: 400,
+      dashDistance: 200,
+      skillCooldown: 15000,
+      sizeColor: '#ff7043',
+      darkColor: '#d84315',
+      lightColor: '#ffccbc'
+    },
+    puffer_fish: {
+      name: '河豚',
+      type: window.FishType.PUFFER_FISH,
+      skillType: window.SkillType.ACTIVE,
+      skillKey: 'k',
+      skillName: '膨胀',
+      description: '主动技能鱼：按K键主动膨胀',
+      feature: '膨胀期间体型+80%，速度-50%，可吃掉比膨胀后小的鱼，冷却15秒',
+      baseSize: 25,
+      baseSpeed: 2.8,
+      inflateMultiplier: 1.8,
+      inflateSpeedMultiplier: 0.5,
+      inflateDuration: 4000,
+      skillCooldown: 15000,
+      sizeColor: '#ab47bc',
+      darkColor: '#7b1fa2',
+      lightColor: '#e1bee7'
+    }
   }
 };

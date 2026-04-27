@@ -15,7 +15,7 @@ window.CollisionManager = class CollisionManager {
         
         const playerX = player.x;
         const playerY = player.y;
-        const playerSize = player.size;
+        const playerSize = player.getEffectiveSize();
         const eatableRatio = diffConfig.eatableRatio;
         const dangerRatio = diffConfig.dangerRatio;
         

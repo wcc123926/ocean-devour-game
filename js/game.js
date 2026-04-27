@@ -60,6 +60,14 @@ window.Game = class Game {
             if ((key === ' ' || key === 'space') && window.GameStatus.isPlaying() && this.player) {
                 this.player.boost();
             }
+            
+            if (key === 'j' && window.GameStatus.isPlaying() && this.player) {
+                this.useSkill1();
+            }
+            
+            if (key === 'k' && window.GameStatus.isPlaying() && this.player) {
+                this.useSkill2();
+            }
         });
 
         document.addEventListener('keyup', (e) => {
@@ -74,12 +82,106 @@ window.Game = class Game {
         document.getElementById('restartButton').addEventListener('click', () => this.restart());
         document.getElementById('pauseRestartButton').addEventListener('click', () => this.restart());
     }
+    
+    useSkill1() {
+        if (!this.player || this.player.fishType !== window.FishType.SWORD_FISH) return;
+        
+        const cooldownPercent = this.player.getSkill1CooldownPercent();
+        if (this.player.isDashing) {
+            return;
+        } else if (cooldownPercent < 100) {
+            const remainingTime = this.player.getSkill1RemainingTime();
+            window.NotificationManager.showSkillCooldown(remainingTime);
+            return;
+        }
+        
+        this.player.useSkill1();
+        window.GameStatus.incrementSkill1Used();
+        window.NotificationManager.showSkillActiveNotification(this.player.fishConfig.skillName);
+        window.NotificationManager.showSkillActive(this.player.fishConfig.skillName);
+        
+        this.handleSwordfishDash();
+    }
+    
+    useSkill2() {
+        if (!this.player || this.player.fishType !== window.FishType.PUFFER_FISH) return;
+        
+        const cooldownPercent = this.player.getSkill2CooldownPercent();
+        if (this.player.isInflated) {
+            return;
+        } else if (cooldownPercent < 100) {
+            const remainingTime = this.player.getSkill2RemainingTime();
+            window.NotificationManager.showSkillCooldown(remainingTime);
+            return;
+        }
+        
+        this.player.useSkill2();
+        window.GameStatus.incrementSkill2Used();
+        window.NotificationManager.showSkillActiveNotification(this.player.fishConfig.skillName);
+        window.NotificationManager.showSkillActive(this.player.fishConfig.skillName);
+    }
+    
+    handleSwordfishDash() {
+        if (!this.player || !this.spawnManager) return;
+        
+        const enemies = this.spawnManager.enemyFish;
+        const playerEffectiveSize = this.player.getEffectiveSize();
+        const dashDirection = this.player.getDirection();
+        
+        const dashStartX = this.player.x;
+        const dashStartY = this.player.y;
+        
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const fish = enemies[i];
+            
+            if (fish.size <= playerEffectiveSize) {
+                const toFish = { x: fish.x - dashStartX, y: fish.y - dashStartY };
+                const distance = Math.sqrt(toFish.x * toFish.x + toFish.y * toFish.y);
+                
+                const dashLength = this.player.fishConfig.dashSpeed * (this.player.fishConfig.dashDuration / 1000) * 60;
+                
+                if (distance <= dashLength) {
+                    const dot = toFish.x * dashDirection.x + toFish.y * dashDirection.y;
+                    if (dot > 0) {
+                        const perpDistance = Math.abs(toFish.x * dashDirection.y - toFish.y * dashDirection.x);
+                        const collisionRadius = (playerEffectiveSize + fish.size) / 2;
+                        
+                        if (perpDistance <= collisionRadius) {
+                            this.eatEnemyFish(i);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    eatEnemyFish(index) {
+        if (!this.spawnManager || !this.player) return;
+        
+        const fish = this.spawnManager.enemyFish[index];
+        if (!fish) return;
+        
+        const points = Math.ceil(fish.size * 2);
+        const growth = fish.size * 0.2;
+        
+        window.GameStatus.addScore(points);
+        window.GameStatus.incrementFishEaten();
+        this.player.grow(growth);
+        
+        if (this.particleSystem) {
+            this.particleSystem.createEatEffect(fish.x, fish.y, fish.color);
+        }
+        
+        this.spawnManager.removeFish(index);
+    }
 
     bindTouchEvents() {
         const joystickArea = document.getElementById('joystickArea');
         const joystickBase = document.getElementById('joystickBase');
         const joystickStick = document.getElementById('joystickStick');
         const boostBtn = document.getElementById('boostBtn');
+        const skill1Btn = document.getElementById('skill1Btn');
+        const skill2Btn = document.getElementById('skill2Btn');
 
         joystickArea.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -139,6 +241,36 @@ window.Game = class Game {
             e.preventDefault();
             boostBtn.classList.remove('active');
         }, { passive: false });
+        
+        if (skill1Btn) {
+            skill1Btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                skill1Btn.classList.add('active');
+                if (window.GameStatus.isPlaying() && this.player) {
+                    this.useSkill1();
+                }
+            }, { passive: false });
+
+            skill1Btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                skill1Btn.classList.remove('active');
+            }, { passive: false });
+        }
+        
+        if (skill2Btn) {
+            skill2Btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                skill2Btn.classList.add('active');
+                if (window.GameStatus.isPlaying() && this.player) {
+                    this.useSkill2();
+                }
+            }, { passive: false });
+
+            skill2Btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                skill2Btn.classList.remove('active');
+            }, { passive: false });
+        }
 
         this.canvas.addEventListener('touchstart', (e) => {
             if (e.target === this.canvas) {
@@ -203,13 +335,17 @@ window.Game = class Game {
     start() {
         window.GameStatus.reset();
         
+        const fishConfig = window.GameStatus.getSelectedFishConfig();
+        const baseSize = fishConfig.baseSize;
+        
         this.player = new window.Player(
             window.CONFIG.canvasWidth / 2,
             window.CONFIG.canvasHeight / 2,
-            window.CONFIG.playerBaseSize
+            baseSize,
+            window.GameStatus.selectedFishType
         );
         
-        window.GameStatus.updateMaxSize(window.CONFIG.playerBaseSize);
+        window.GameStatus.updateMaxSize(baseSize);
         window.GameStatus.updateStagesReached(0);
         window.UIManager.previousStageIndex = 0;
         window.UIManager.previousSpeedBoost = false;

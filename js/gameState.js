@@ -20,6 +20,10 @@ window.GameStatus = {
     explosionsTriggered: 0,
     fishKilledByExplosion: 0,
     
+    selectedFishType: window.FishType.NORMAL,
+    skill1Used: 0,
+    skill2Used: 0,
+    
     init: function() {
         this.state = window.GameState.START;
         this.score = 0;
@@ -34,6 +38,9 @@ window.GameStatus = {
         this.deathCause = window.DeathCause.UNKNOWN;
         this.explosionsTriggered = 0;
         this.fishKilledByExplosion = 0;
+        this.selectedFishType = window.FishType.NORMAL;
+        this.skill1Used = 0;
+        this.skill2Used = 0;
     },
     
     reset: function() {
@@ -48,6 +55,8 @@ window.GameStatus = {
         this.deathCause = window.DeathCause.UNKNOWN;
         this.explosionsTriggered = 0;
         this.fishKilledByExplosion = 0;
+        this.skill1Used = 0;
+        this.skill2Used = 0;
     },
     
     getDifficultyConfig: function() {
@@ -98,6 +107,23 @@ window.GameStatus = {
     
     addFishKilledByExplosion: function(count) {
         this.fishKilledByExplosion += count;
+    },
+    
+    getSelectedFishConfig: function() {
+        return window.CONFIG.fishTypes[this.selectedFishType];
+    },
+    
+    setSelectedFishType: function(fishType) {
+        this.selectedFishType = fishType;
+        console.log('Fish type selected:', fishType);
+    },
+    
+    incrementSkill1Used: function() {
+        this.skill1Used++;
+    },
+    
+    incrementSkill2Used: function() {
+        this.skill2Used++;
     },
     
     formatTime: function(ms) {
