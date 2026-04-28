@@ -206,7 +206,6 @@ window.Player = class Player {
             this.dashDirection = this.direction;
             this.dashStartX = this.x;
             this.dashStartY = this.y;
-            window.GameStatus.incrementSkill1Used();
             return true;
         }
         return false;
@@ -219,10 +218,16 @@ window.Player = class Player {
             this.inflateDuration = this.fishConfig.inflateDuration;
             this.inflateCooldown = this.fishConfig.skillCooldown;
             this.inflateAnimationPhase = 0;
-            window.GameStatus.incrementSkill2Used();
             return true;
         }
         return false;
+    }
+    
+    getDirection() {
+        return {
+            x: Math.cos(this.direction),
+            y: Math.sin(this.direction)
+        };
     }
 
     getSkill1CooldownPercent() {

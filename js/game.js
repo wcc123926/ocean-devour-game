@@ -374,7 +374,7 @@ window.Game = class Game {
         window.GameStatus.state = window.GameState.PLAYING;
         window.UIManager.hidePauseOverlay();
         this.lastTime = performance.now();
-        this.gameLoop();
+        this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
     }
 
     restart() {
@@ -383,8 +383,16 @@ window.Game = class Game {
 
     gameOver() {
         console.log('Game Over triggered!');
+        if (window.GameStatus.isGameOver()) return;
+        
         window.GameStatus.state = window.GameState.GAME_OVER;
-        cancelAnimationFrame(this.animationId);
+        
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        window.UIManager.updateUI();
         window.UIManager.showGameOverOverlay();
     }
 
@@ -392,10 +400,16 @@ window.Game = class Game {
         const deltaTime = (currentTime - this.lastTime) / 1000;
         this.lastTime = currentTime;
 
+        if (window.GameStatus.isGameOver()) {
+            return;
+        }
+
         this.update(deltaTime);
         this.render();
 
-        this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
+        if (!window.GameStatus.isGameOver()) {
+            this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
+        }
     }
 
     update(deltaTime) {
@@ -409,7 +423,7 @@ window.Game = class Game {
             window.GameStatus.updateMaxSize(this.player.size);
         }
         
-        if (!window.GameStatus.isPlaying()) return;
+        if (window.GameStatus.isGameOver()) return;
 
         if (this.spawnManager) {
             this.spawnManager.spawnEnemyFish();
@@ -417,25 +431,25 @@ window.Game = class Game {
             this.spawnManager.update(deltaTime, this.canvas);
         }
         
-        if (!window.GameStatus.isPlaying()) return;
+        if (window.GameStatus.isGameOver()) return;
 
         if (this.particleSystem) {
             this.particleSystem.update(deltaTime);
         }
         
-        if (!window.GameStatus.isPlaying()) return;
+        if (window.GameStatus.isGameOver()) return;
 
         if (this.collisionManager) {
             this.collisionManager.checkAllCollisions();
         }
         
-        if (!window.GameStatus.isPlaying()) return;
+        if (window.GameStatus.isGameOver()) return;
 
         if (this.explosionManager) {
             this.explosionManager.update(deltaTime);
         }
         
-        if (!window.GameStatus.isPlaying()) return;
+        if (window.GameStatus.isGameOver()) return;
 
         window.UIManager.updateUI();
     }
