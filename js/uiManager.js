@@ -157,6 +157,220 @@ window.UIManager = {
     previousSpeedBoost: false,
     previousShield: false,
     
+    fishIconConfigs: {
+        normal: {
+            bodyColor: '#64b5f6',
+            darkColor: '#1976d2',
+            lightColor: '#bbdefb'
+        },
+        whale_shark: {
+            bodyColor: '#7986cb',
+            darkColor: '#3949ab',
+            lightColor: '#c5cae9'
+        },
+        sword_fish: {
+            bodyColor: '#ff7043',
+            darkColor: '#d84315',
+            lightColor: '#ffccbc'
+        },
+        puffer_fish: {
+            bodyColor: '#ab47bc',
+            darkColor: '#7b1fa2',
+            lightColor: '#e1bee7'
+        }
+    },
+    
+    drawFishIcon: function(canvas, fishType) {
+        if (!canvas) return false;
+        
+        const ctx = canvas.getContext('2d');
+        const config = this.fishIconConfigs[fishType] || this.fishIconConfigs.normal;
+        const w = canvas.width;
+        const h = canvas.height;
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const scale = Math.min(w, h) / 50;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        const bodyGradient = ctx.createRadialGradient(
+            centerX - 5 * scale, centerY - 3 * scale, 0,
+            centerX, centerY, 15 * scale
+        );
+        bodyGradient.addColorStop(0, config.lightColor);
+        bodyGradient.addColorStop(0.7, config.bodyColor);
+        bodyGradient.addColorStop(1, config.darkColor);
+        
+        switch (fishType) {
+            case 'sword_fish':
+                this.drawSwordFishIcon(ctx, centerX, centerY, scale, bodyGradient, config);
+                break;
+            case 'whale_shark':
+                this.drawWhaleSharkIcon(ctx, centerX, centerY, scale, bodyGradient, config);
+                break;
+            case 'puffer_fish':
+                this.drawPufferFishIcon(ctx, centerX, centerY, scale, bodyGradient, config);
+                break;
+            default:
+                this.drawNormalFishIcon(ctx, centerX, centerY, scale, bodyGradient, config);
+        }
+        
+        return true;
+    },
+    
+    drawNormalFishIcon: function(ctx, cx, cy, scale, gradient, config) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 12 * scale, 8 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = config.darkColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        this.drawFinsAndTailIcon(ctx, cx, cy, scale, config);
+        this.drawEyeIcon(ctx, cx, cy, scale, config);
+    },
+    
+    drawSwordFishIcon: function(ctx, cx, cy, scale, gradient, config) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 13 * scale, 6 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = config.darkColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(cx + 10 * scale, cy);
+        ctx.lineTo(cx + 25 * scale, cy);
+        ctx.strokeStyle = config.darkColor;
+        ctx.lineWidth = 1.5 * scale;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.ellipse(cx + 23 * scale, cy, 1.5 * scale, 0.6 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = config.lightColor;
+        ctx.fill();
+        
+        this.drawFinsAndTailIcon(ctx, cx, cy, scale, config);
+        this.drawEyeIcon(ctx, cx, cy, scale, config);
+    },
+    
+    drawWhaleSharkIcon: function(ctx, cx, cy, scale, gradient, config) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 13 * scale, 8.5 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = config.darkColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        const spotPositions = [
+            [-0.3, -0.3], [0.2, -0.35], [0.4, 0.1],
+            [-0.4, 0.15], [0.1, 0.3], [-0.1, -0.15]
+        ];
+        spotPositions.forEach(pos => {
+            ctx.beginPath();
+            ctx.arc(cx + pos[0] * 8 * scale, cy + pos[1] * 8 * scale, 1.2 * scale, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        this.drawFinsAndTailIcon(ctx, cx, cy, scale, config);
+        this.drawEyeIcon(ctx, cx, cy, scale, config);
+    },
+    
+    drawPufferFishIcon: function(ctx, cx, cy, scale, gradient, config) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 10 * scale, 8 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = config.darkColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        const spikeCount = 12;
+        const innerRadius = 8.5 * scale;
+        const outerRadius = 11 * scale;
+        
+        for (let i = 0; i < spikeCount; i++) {
+            const angle = (Math.PI * 2 / spikeCount) * i;
+            const innerX = cx + Math.cos(angle) * innerRadius;
+            const innerY = cy + Math.sin(angle) * innerRadius;
+            const outerX = cx + Math.cos(angle) * outerRadius;
+            const outerY = cy + Math.sin(angle) * outerRadius;
+            
+            ctx.beginPath();
+            ctx.moveTo(innerX - Math.cos(angle + 0.25) * 1.5 * scale, innerY - Math.sin(angle + 0.25) * 1.5 * scale);
+            ctx.lineTo(outerX, outerY);
+            ctx.lineTo(innerX - Math.cos(angle - 0.25) * 1.5 * scale, innerY - Math.sin(angle - 0.25) * 1.5 * scale);
+            ctx.closePath();
+            ctx.fillStyle = config.darkColor;
+            ctx.fill();
+            ctx.strokeStyle = config.lightColor;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+        }
+        
+        this.drawEyeIcon(ctx, cx, cy, scale, config);
+    },
+    
+    drawFinsAndTailIcon: function(ctx, cx, cy, scale, config) {
+        ctx.beginPath();
+        ctx.moveTo(cx - 10 * scale, cy);
+        ctx.quadraticCurveTo(
+            cx - 16 * scale, cy - 5 * scale,
+            cx - 20 * scale, cy - 4 * scale
+        );
+        ctx.quadraticCurveTo(
+            cx - 17 * scale, cy,
+            cx - 20 * scale, cy + 4 * scale
+        );
+        ctx.quadraticCurveTo(
+            cx - 16 * scale, cy + 5 * scale,
+            cx - 10 * scale, cy
+        );
+        ctx.fillStyle = config.lightColor;
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 6 * scale);
+        ctx.quadraticCurveTo(
+            cx - 4 * scale, cy - 10 * scale,
+            cx - 2 * scale, cy - 8 * scale
+        );
+        ctx.quadraticCurveTo(
+            cx - 1 * scale, cy - 5 * scale,
+            cx, cy - 6 * scale
+        );
+        ctx.fillStyle = config.lightColor;
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.ellipse(cx - 5 * scale, cy + 5 * scale, 3 * scale, 2 * scale, 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = config.lightColor;
+        ctx.fill();
+    },
+    
+    drawEyeIcon: function(ctx, cx, cy, scale, config) {
+        ctx.beginPath();
+        ctx.arc(cx + 6 * scale, cy - 2 * scale, 1.8 * scale, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx + 6.5 * scale, cy - 2 * scale, 0.9 * scale, 0, Math.PI * 2);
+        ctx.fillStyle = '#333';
+        ctx.fill();
+    },
+    
+    initAllFishIcons: function() {
+        this.drawFishIcon(document.getElementById('fishCanvasNormal'), 'normal');
+        this.drawFishIcon(document.getElementById('fishCanvasWhaleShark'), 'whale_shark');
+        this.drawFishIcon(document.getElementById('fishCanvasSwordFish'), 'sword_fish');
+        this.drawFishIcon(document.getElementById('fishCanvasPufferFish'), 'puffer_fish');
+    },
+    
     fishDescriptions: {
         normal: {
             title: '普通鱼 - 均衡型',
@@ -182,6 +396,8 @@ window.UIManager = {
         this.previousShield = false;
         
         window.NotificationManager.init();
+        
+        this.initAllFishIcons();
         
         this.bindDifficultySelector();
         this.bindFishSelector();
@@ -1073,7 +1289,7 @@ window.UIManager = {
     
     updateGameOverFishPanel: function() {
         const fishUsedPanel = document.getElementById('fishUsedPanel');
-        const fishUsedIcon = document.getElementById('fishUsedIcon');
+        const fishCanvasUsed = document.getElementById('fishCanvasUsed');
         const fishUsedName = document.getElementById('fishUsedName');
         const fishUsedType = document.getElementById('fishUsedType');
         
@@ -1082,12 +1298,6 @@ window.UIManager = {
         try {
             const fishConfig = window.GameStatus.getSelectedFishConfig();
             if (fishConfig) {
-                const fishEmojis = {
-                    normal: '🐟',
-                    whale_shark: '🦈',
-                    sword_fish: '�',
-                    puffer_fish: '🐡'
-                };
                 const fishTypeLabels = {
                     normal: '均衡型',
                     whale_shark: '被动技能',
@@ -1095,8 +1305,8 @@ window.UIManager = {
                     puffer_fish: '主动技能 - ' + (fishConfig.skillName || '未知')
                 };
                 
-                if (fishUsedIcon) {
-                    fishUsedIcon.textContent = fishEmojis[window.GameStatus.selectedFishType] || '🐟';
+                if (fishCanvasUsed) {
+                    this.drawFishIcon(fishCanvasUsed, window.GameStatus.selectedFishType);
                 }
                 if (fishUsedName) {
                     fishUsedName.textContent = fishConfig.name || '普通鱼';
