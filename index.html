@@ -199,7 +199,7 @@
                             <div class="fish-options compact">
                                 <button class="fish-btn compact active" data-fish="normal">
                                     <div class="fish-preview small">
-                                        <div class="fish-emoji">🐟</div>
+                                        <canvas class="fish-canvas" id="fishCanvasNormal" width="60" height="40"></canvas>
                                     </div>
                                     <div class="fish-info compact">
                                         <div class="fish-name">普通鱼</div>
@@ -208,7 +208,7 @@
                                 </button>
                                 <button class="fish-btn compact" data-fish="whale_shark">
                                     <div class="fish-preview small">
-                                        <div class="fish-emoji">🦈</div>
+                                        <canvas class="fish-canvas" id="fishCanvasWhaleShark" width="60" height="40"></canvas>
                                     </div>
                                     <div class="fish-info compact">
                                         <div class="fish-name">鲸鲨</div>
@@ -217,7 +217,7 @@
                                 </button>
                                 <button class="fish-btn compact" data-fish="sword_fish">
                                     <div class="fish-preview small">
-                                        <div class="fish-emoji swordfish-icon">�</div>
+                                        <canvas class="fish-canvas" id="fishCanvasSwordFish" width="60" height="40"></canvas>
                                     </div>
                                     <div class="fish-info compact">
                                         <div class="fish-name">剑鱼</div>
@@ -226,7 +226,7 @@
                                 </button>
                                 <button class="fish-btn compact" data-fish="puffer_fish">
                                     <div class="fish-preview small">
-                                        <div class="fish-emoji puffer-icon">🐡</div>
+                                        <canvas class="fish-canvas" id="fishCanvasPufferFish" width="60" height="40"></canvas>
                                     </div>
                                     <div class="fish-info compact">
                                         <div class="fish-name">河豚</div>
@@ -391,7 +391,9 @@
                     <div class="death-cause hidden" id="deathCause"></div>
                     
                     <div class="fish-used-panel compact" id="fishUsedPanel">
-                        <div class="fish-used-icon" id="fishUsedIcon">🐟</div>
+                        <div class="fish-used-preview">
+                            <canvas class="fish-canvas" id="fishCanvasUsed" width="60" height="40"></canvas>
+                        </div>
                         <div class="fish-used-info">
                             <div class="fish-used-name" id="fishUsedName">普通鱼</div>
                             <div class="fish-used-type" id="fishUsedType">均衡型</div>

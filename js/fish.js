@@ -206,7 +206,7 @@ window.Player = class Player {
             this.dashDirection = this.direction;
             this.dashStartX = this.x;
             this.dashStartY = this.y;
-            this.activateInvulnerability(this.fishConfig.dashDuration);
+            this.activateInvulnerability(this.fishConfig.dashDuration + 200);
             return true;
         }
         return false;
