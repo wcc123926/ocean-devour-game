@@ -768,7 +768,7 @@ window.UIManager = {
                 const fishEmojis = {
                     normal: '🐟',
                     whale_shark: '🦈',
-                    sword_fish: '🐡',
+                    sword_fish: '�',
                     puffer_fish: '🐡'
                 };
                 if (fishTypeIcon) {
@@ -1085,7 +1085,7 @@ window.UIManager = {
                 const fishEmojis = {
                     normal: '🐟',
                     whale_shark: '🦈',
-                    sword_fish: '🐡',
+                    sword_fish: '�',
                     puffer_fish: '🐡'
                 };
                 const fishTypeLabels = {

@@ -33,6 +33,10 @@ window.CollisionManager = class CollisionManager {
                 if (sizeRatio < eatableRatio) {
                     this.eatFish(fish, i);
                 } else if (sizeRatio > dangerRatio) {
+                    if (player.isInvulnerable || player.isDashing) {
+                        continue;
+                    }
+                    
                     if (player.hasShield) {
                         this.handleShieldCollision(player, i);
                     } else {
