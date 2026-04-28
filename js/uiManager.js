@@ -247,54 +247,108 @@ window.UIManager = {
         const game = window.gameInstance;
         if (!game) return;
 
-        document.getElementById('scoreValue').textContent = window.GameStatus.score;
+        try {
+            const scoreValue = document.getElementById('scoreValue');
+            const stageValue = document.getElementById('stageValue');
+            const difficultyValue = document.getElementById('difficultyValue');
+            const timeValue = document.getElementById('timeValue');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            if (scoreValue) scoreValue.textContent = window.GameStatus.score;
+            
+            let stage = { name: '未知', index: 0, minSize: 25 };
+            try {
+                stage = window.GameUtils.getCurrentStage();
+            } catch (e) {
+                console.error('Error getting current stage:', e);
+            }
+            
+            if (stageValue) stageValue.textContent = stage.name;
+            
+            try {
+                const diffConfig = window.GameStatus.getDifficultyConfig();
+                if (difficultyValue) difficultyValue.textContent = diffConfig.name;
+            } catch (e) {
+                console.error('Error getting difficulty config:', e);
+            }
+            
+            try {
+                if (timeValue) timeValue.textContent = window.GameStatus.formatTime(window.GameStatus.gameTime);
+            } catch (e) {
+                console.error('Error formatting time:', e);
+            }
 
-        const stage = window.GameUtils.getCurrentStage();
-        document.getElementById('stageValue').textContent = stage.name;
-        
-        const diffConfig = window.GameStatus.getDifficultyConfig();
-        document.getElementById('difficultyValue').textContent = diffConfig.name;
+            try {
+                this.updateGoalPanel(stage);
+            } catch (e) {
+                console.error('Error in updateGoalPanel:', e);
+            }
 
-        document.getElementById('timeValue').textContent = window.GameStatus.formatTime(window.GameStatus.gameTime);
+            try {
+                const progress = window.GameUtils.getProgress();
+                if (progressBar) progressBar.style.width = `${progress}%`;
+                if (progressText) progressText.textContent = `${Math.round(progress)}%`;
+            } catch (e) {
+                console.error('Error updating progress:', e);
+            }
 
-        this.updateGoalPanel(stage);
-
-        const progress = window.GameUtils.getProgress();
-        document.getElementById('progressBar').style.width = `${progress}%`;
-        document.getElementById('progressText').textContent = `${Math.round(progress)}%`;
-
-        if (game.player) {
-            this.updatePowerupIndicators(game.player);
-            this.updateSkillIndicators(game.player);
-            this.checkStageUp(stage);
+            if (game.player) {
+                try {
+                    this.updatePowerupIndicators(game.player);
+                } catch (e) {
+                    console.error('Error in updatePowerupIndicators:', e);
+                }
+                try {
+                    this.updateSkillIndicators(game.player);
+                } catch (e) {
+                    console.error('Error in updateSkillIndicators:', e);
+                }
+                try {
+                    this.checkStageUp(stage);
+                } catch (e) {
+                    console.error('Error in checkStageUp:', e);
+                }
+            }
+        } catch (e) {
+            console.error('Error in updateUI:', e);
         }
     },
     
     updateGoalPanel: function(stage) {
-        const nextStageIndex = Math.min(stage.index + 1, window.CONFIG.growthStages.length - 1);
-        const isMaxStage = stage.index === nextStageIndex;
-        
-        const game = window.gameInstance;
-        const currentSize = game && game.player ? Math.round(game.player.size) : stage.minSize;
-        
-        document.getElementById('goalCurrent').innerHTML = `
-            <span class="goal-icon">🐟</span>
-            <span class="goal-text">当前: ${stage.name} (${currentSize})</span>
-        `;
-        
-        if (isMaxStage) {
-            document.getElementById('goalNext').innerHTML = `
-                <span class="goal-icon">👑</span>
-                <span class="goal-text">已达最高阶段！</span>
+        try {
+            const goalCurrent = document.getElementById('goalCurrent');
+            const goalNext = document.getElementById('goalNext');
+            
+            if (!goalCurrent || !goalNext) return;
+            
+            const nextStageIndex = Math.min(stage.index + 1, window.CONFIG.growthStages.length - 1);
+            const isMaxStage = stage.index === nextStageIndex;
+            
+            const game = window.gameInstance;
+            const currentSize = game && game.player ? Math.round(game.player.size) : stage.minSize;
+            
+            goalCurrent.innerHTML = `
+                <span class="goal-icon">🐟</span>
+                <span class="goal-text">当前: ${stage.name} (${currentSize})</span>
             `;
-            document.getElementById('goalNext').style.opacity = '0.7';
-        } else {
-            const nextStage = window.CONFIG.growthStages[nextStageIndex];
-            document.getElementById('goalNext').innerHTML = `
-                <span class="goal-icon">➡️</span>
-                <span class="goal-text">下一: ${nextStage.name} (${nextStage.minSize})</span>
-            `;
-            document.getElementById('goalNext').style.opacity = '1';
+            
+            if (isMaxStage) {
+                goalNext.innerHTML = `
+                    <span class="goal-icon">👑</span>
+                    <span class="goal-text">已达最高阶段！</span>
+                `;
+                goalNext.style.opacity = '0.7';
+            } else {
+                const nextStage = window.CONFIG.growthStages[nextStageIndex];
+                goalNext.innerHTML = `
+                    <span class="goal-icon">➡️</span>
+                    <span class="goal-text">下一: ${nextStage.name} (${nextStage.minSize})</span>
+                `;
+                goalNext.style.opacity = '1';
+            }
+        } catch (e) {
+            console.error('Error in updateGoalPanel:', e);
         }
     },
     
@@ -310,34 +364,44 @@ window.UIManager = {
         const skill1Btn = document.getElementById('skill1Btn');
         const skill2Btn = document.getElementById('skill2Btn');
         
+        const setClass = (element, className, shouldAdd) => {
+            if (element) {
+                if (shouldAdd) {
+                    element.classList.add(className);
+                } else {
+                    element.classList.remove(className);
+                }
+            }
+        };
+        
         if (fishType === window.FishType.SWORD_FISH) {
-            skillPanel.classList.remove('hidden');
-            skill1Container.classList.remove('hidden');
-            skill2Container.classList.add('hidden');
-            skillHint1.classList.remove('hidden');
-            skillHint2.classList.add('hidden');
-            skill1Btn.classList.remove('hidden');
-            skill2Btn.classList.add('hidden');
+            setClass(skillPanel, 'hidden', false);
+            setClass(skill1Container, 'hidden', false);
+            setClass(skill2Container, 'hidden', true);
+            setClass(skillHint1, 'hidden', false);
+            setClass(skillHint2, 'hidden', true);
+            setClass(skill1Btn, 'hidden', false);
+            setClass(skill2Btn, 'hidden', true);
             
             this.updateSkill1Indicator(player);
         } else if (fishType === window.FishType.PUFFER_FISH) {
-            skillPanel.classList.remove('hidden');
-            skill1Container.classList.add('hidden');
-            skill2Container.classList.remove('hidden');
-            skillHint1.classList.add('hidden');
-            skillHint2.classList.remove('hidden');
-            skill1Btn.classList.add('hidden');
-            skill2Btn.classList.remove('hidden');
+            setClass(skillPanel, 'hidden', false);
+            setClass(skill1Container, 'hidden', true);
+            setClass(skill2Container, 'hidden', false);
+            setClass(skillHint1, 'hidden', true);
+            setClass(skillHint2, 'hidden', false);
+            setClass(skill1Btn, 'hidden', true);
+            setClass(skill2Btn, 'hidden', false);
             
             this.updateSkill2Indicator(player);
         } else {
-            skillPanel.classList.add('hidden');
-            skill1Container.classList.add('hidden');
-            skill2Container.classList.add('hidden');
-            skillHint1.classList.add('hidden');
-            skillHint2.classList.add('hidden');
-            skill1Btn.classList.add('hidden');
-            skill2Btn.classList.add('hidden');
+            setClass(skillPanel, 'hidden', true);
+            setClass(skill1Container, 'hidden', true);
+            setClass(skill2Container, 'hidden', true);
+            setClass(skillHint1, 'hidden', true);
+            setClass(skillHint2, 'hidden', true);
+            setClass(skill1Btn, 'hidden', true);
+            setClass(skill2Btn, 'hidden', true);
         }
     },
     
@@ -349,26 +413,36 @@ window.UIManager = {
         const skillBtnText = document.getElementById('skill1BtnText');
         const skillBtnCooldown = document.getElementById('skill1BtnCooldown');
         
-        skillName.textContent = player.fishConfig.skillName;
-        skillBtnText.textContent = player.fishConfig.skillName;
+        if (skillName && player.fishConfig) {
+            skillName.textContent = player.fishConfig.skillName;
+        }
+        if (skillBtnText && player.fishConfig) {
+            skillBtnText.textContent = player.fishConfig.skillName;
+        }
         
         const cooldownPercent = player.getSkill1CooldownPercent();
         const remainingTime = player.getSkill1RemainingTime();
         
         if (player.isDashing) {
-            skillIndicator.classList.remove('ready');
-            skillIndicator.classList.add('active');
-            skillCooldown.textContent = '!';
-            skillOverlay.style.height = '0%';
+            if (skillIndicator) {
+                skillIndicator.classList.remove('ready');
+                skillIndicator.classList.add('active');
+            }
+            if (skillCooldown) skillCooldown.textContent = '!';
+            if (skillOverlay) skillOverlay.style.height = '0%';
         } else if (cooldownPercent >= 100) {
-            skillIndicator.classList.add('ready');
-            skillIndicator.classList.remove('active');
-            skillCooldown.textContent = 'J';
-            skillOverlay.style.height = '0%';
+            if (skillIndicator) {
+                skillIndicator.classList.add('ready');
+                skillIndicator.classList.remove('active');
+            }
+            if (skillCooldown) skillCooldown.textContent = 'J';
+            if (skillOverlay) skillOverlay.style.height = '0%';
         } else {
-            skillIndicator.classList.remove('ready', 'active');
-            skillCooldown.textContent = remainingTime > 0 ? remainingTime : 'J';
-            skillOverlay.style.height = `${100 - cooldownPercent}%`;
+            if (skillIndicator) {
+                skillIndicator.classList.remove('ready', 'active');
+            }
+            if (skillCooldown) skillCooldown.textContent = remainingTime > 0 ? remainingTime : 'J';
+            if (skillOverlay) skillOverlay.style.height = `${100 - cooldownPercent}%`;
         }
         
         if (skillBtnCooldown) {
@@ -384,26 +458,36 @@ window.UIManager = {
         const skillBtnText = document.getElementById('skill2BtnText');
         const skillBtnCooldown = document.getElementById('skill2BtnCooldown');
         
-        skillName.textContent = player.fishConfig.skillName;
-        skillBtnText.textContent = player.fishConfig.skillName;
+        if (skillName && player.fishConfig) {
+            skillName.textContent = player.fishConfig.skillName;
+        }
+        if (skillBtnText && player.fishConfig) {
+            skillBtnText.textContent = player.fishConfig.skillName;
+        }
         
         const cooldownPercent = player.getSkill2CooldownPercent();
         const remainingTime = player.getSkill2RemainingTime();
         
         if (player.isInflated) {
-            skillIndicator.classList.remove('ready');
-            skillIndicator.classList.add('active');
-            skillCooldown.textContent = '!';
-            skillOverlay.style.height = '0%';
+            if (skillIndicator) {
+                skillIndicator.classList.remove('ready');
+                skillIndicator.classList.add('active');
+            }
+            if (skillCooldown) skillCooldown.textContent = '!';
+            if (skillOverlay) skillOverlay.style.height = '0%';
         } else if (cooldownPercent >= 100) {
-            skillIndicator.classList.add('ready');
-            skillIndicator.classList.remove('active');
-            skillCooldown.textContent = 'K';
-            skillOverlay.style.height = '0%';
+            if (skillIndicator) {
+                skillIndicator.classList.add('ready');
+                skillIndicator.classList.remove('active');
+            }
+            if (skillCooldown) skillCooldown.textContent = 'K';
+            if (skillOverlay) skillOverlay.style.height = '0%';
         } else {
-            skillIndicator.classList.remove('ready', 'active');
-            skillCooldown.textContent = remainingTime > 0 ? remainingTime : 'K';
-            skillOverlay.style.height = `${100 - cooldownPercent}%`;
+            if (skillIndicator) {
+                skillIndicator.classList.remove('ready', 'active');
+            }
+            if (skillCooldown) skillCooldown.textContent = remainingTime > 0 ? remainingTime : 'K';
+            if (skillOverlay) skillOverlay.style.height = `${100 - cooldownPercent}%`;
         }
         
         if (skillBtnCooldown) {
@@ -477,29 +561,53 @@ window.UIManager = {
     },
 
     showStartOverlay: function() {
-        document.getElementById('startOverlay').classList.remove('hidden');
-        document.getElementById('gameOverOverlay').classList.add('hidden');
-        document.getElementById('pauseOverlay').classList.add('hidden');
-        document.getElementById('pauseIndicator').classList.add('hidden');
-        document.getElementById('mobileControls').classList.add('hidden');
-        document.getElementById('fishTypePanel').classList.add('hidden');
-        document.getElementById('skillPanel').classList.add('hidden');
-        document.getElementById('controlHintLeft').classList.add('hidden');
-        document.getElementById('controlHintRight').classList.add('hidden');
+        const startOverlay = document.getElementById('startOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const pauseIndicator = document.getElementById('pauseIndicator');
+        const mobileControls = document.getElementById('mobileControls');
+        const fishTypePanel = document.getElementById('fishTypePanel');
+        const skillPanel = document.getElementById('skillPanel');
+        const controlHintLeft = document.getElementById('controlHintLeft');
+        const controlHintRight = document.getElementById('controlHintRight');
+        
+        if (startOverlay) startOverlay.classList.remove('hidden');
+        if (gameOverOverlay) gameOverOverlay.classList.add('hidden');
+        if (pauseOverlay) pauseOverlay.classList.add('hidden');
+        if (pauseIndicator) pauseIndicator.classList.add('hidden');
+        if (mobileControls) mobileControls.classList.add('hidden');
+        if (fishTypePanel) fishTypePanel.classList.add('hidden');
+        if (skillPanel) skillPanel.classList.add('hidden');
+        if (controlHintLeft) controlHintLeft.classList.add('hidden');
+        if (controlHintRight) controlHintRight.classList.add('hidden');
     },
 
     hideAllOverlays: function() {
-        document.getElementById('startOverlay').classList.add('hidden');
-        document.getElementById('gameOverOverlay').classList.add('hidden');
-        document.getElementById('pauseOverlay').classList.add('hidden');
-        document.getElementById('pauseIndicator').classList.add('hidden');
+        const startOverlay = document.getElementById('startOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const pauseIndicator = document.getElementById('pauseIndicator');
+        const mobileControls = document.getElementById('mobileControls');
         
-        this.updateFishTypePanel();
-        this.updateControlHints();
+        if (startOverlay) startOverlay.classList.add('hidden');
+        if (gameOverOverlay) gameOverOverlay.classList.add('hidden');
+        if (pauseOverlay) pauseOverlay.classList.add('hidden');
+        if (pauseIndicator) pauseIndicator.classList.add('hidden');
+        
+        try {
+            this.updateFishTypePanel();
+        } catch (e) {
+            console.error('Error in updateFishTypePanel:', e);
+        }
+        try {
+            this.updateControlHints();
+        } catch (e) {
+            console.error('Error in updateControlHints:', e);
+        }
         
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile || window.innerWidth <= 768) {
-            document.getElementById('mobileControls').classList.remove('hidden');
+            if (mobileControls) mobileControls.classList.remove('hidden');
         }
     },
     
@@ -508,17 +616,28 @@ window.UIManager = {
         const fishTypeIcon = document.getElementById('fishTypeIcon');
         const fishTypeName = document.getElementById('fishTypeName');
         
-        const fishConfig = window.GameStatus.getSelectedFishConfig();
-        if (fishConfig) {
-            const fishEmojis = {
-                normal: '🐟',
-                whale_shark: '🦈',
-                sword_fish: '🐡',
-                puffer_fish: '🐡'
-            };
-            fishTypeIcon.textContent = fishEmojis[window.GameStatus.selectedFishType] || '🐟';
-            fishTypeName.textContent = fishConfig.name;
-            fishTypePanel.classList.remove('hidden');
+        if (!fishTypePanel) return;
+        
+        try {
+            const fishConfig = window.GameStatus.getSelectedFishConfig();
+            if (fishConfig) {
+                const fishEmojis = {
+                    normal: '🐟',
+                    whale_shark: '🦈',
+                    sword_fish: '🐡',
+                    puffer_fish: '🐡'
+                };
+                if (fishTypeIcon) {
+                    fishTypeIcon.textContent = fishEmojis[window.GameStatus.selectedFishType] || '🐟';
+                }
+                if (fishTypeName) {
+                    fishTypeName.textContent = fishConfig.name;
+                }
+                fishTypePanel.classList.remove('hidden');
+            }
+        } catch (e) {
+            console.error('Error in updateFishTypePanel:', e);
+            fishTypePanel.classList.add('hidden');
         }
     },
     
@@ -535,18 +654,20 @@ window.UIManager = {
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         
         if (isMobile) {
-            controlHintLeft.classList.add('hidden');
-            controlHintRight.classList.add('hidden');
+            if (controlHintLeft) controlHintLeft.classList.add('hidden');
+            if (controlHintRight) controlHintRight.classList.add('hidden');
+            if (skillHint1) skillHint1.classList.add('hidden');
+            if (skillHint2) skillHint2.classList.add('hidden');
             return;
         }
         
-        controlHintLeft.classList.remove('hidden');
-        controlHintRight.classList.remove('hidden');
+        if (controlHintLeft) controlHintLeft.classList.remove('hidden');
+        if (controlHintRight) controlHintRight.classList.remove('hidden');
         
-        const hintTitle = controlHintLeft.querySelector('.hint-title');
-        const hintOr = controlHintLeft.querySelector('.hint-or');
-        const keyBtns = controlHintLeft.querySelectorAll('.key-btn');
-        const keyHints = controlHintLeft.querySelectorAll('.key-hint');
+        const hintTitle = controlHintLeft ? controlHintLeft.querySelector('.hint-title') : null;
+        const hintOr = controlHintLeft ? controlHintLeft.querySelector('.hint-or') : null;
+        const keyBtns = controlHintLeft ? controlHintLeft.querySelectorAll('.key-btn') : [];
+        const keyHints = controlHintLeft ? controlHintLeft.querySelectorAll('.key-hint') : [];
         
         if (controlMode === window.ControlMode.MOUSE) {
             if (hintTitle) hintTitle.textContent = '移动';
@@ -588,80 +709,142 @@ window.UIManager = {
         
         if (hasActiveSkill) {
             if (window.GameStatus.selectedFishType === window.FishType.SWORD_FISH) {
-                skillHint1.classList.remove('hidden');
-                skillHint2.classList.add('hidden');
-                skillHintText1.textContent = fishConfig.skillName;
+                if (skillHint1) skillHint1.classList.remove('hidden');
+                if (skillHint2) skillHint2.classList.add('hidden');
+                if (skillHintText1 && fishConfig) skillHintText1.textContent = fishConfig.skillName;
             } else if (window.GameStatus.selectedFishType === window.FishType.PUFFER_FISH) {
-                skillHint1.classList.add('hidden');
-                skillHint2.classList.remove('hidden');
-                skillHintText2.textContent = fishConfig.skillName;
+                if (skillHint1) skillHint1.classList.add('hidden');
+                if (skillHint2) skillHint2.classList.remove('hidden');
+                if (skillHintText2 && fishConfig) skillHintText2.textContent = fishConfig.skillName;
             } else {
-                skillHint1.classList.add('hidden');
-                skillHint2.classList.add('hidden');
+                if (skillHint1) skillHint1.classList.add('hidden');
+                if (skillHint2) skillHint2.classList.add('hidden');
             }
         } else {
-            skillHint1.classList.add('hidden');
-            skillHint2.classList.add('hidden');
+            if (skillHint1) skillHint1.classList.add('hidden');
+            if (skillHint2) skillHint2.classList.add('hidden');
         }
     },
 
     showPauseOverlay: function() {
-        document.getElementById('pauseIndicator').classList.remove('hidden');
-        document.getElementById('pauseOverlay').classList.remove('hidden');
-        document.getElementById('mobileControls').classList.add('hidden');
+        const pauseIndicator = document.getElementById('pauseIndicator');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const mobileControls = document.getElementById('mobileControls');
+        
+        if (pauseIndicator) pauseIndicator.classList.remove('hidden');
+        if (pauseOverlay) pauseOverlay.classList.remove('hidden');
+        if (mobileControls) mobileControls.classList.add('hidden');
     },
 
     hidePauseOverlay: function() {
-        document.getElementById('pauseIndicator').classList.add('hidden');
-        document.getElementById('pauseOverlay').classList.add('hidden');
+        const pauseIndicator = document.getElementById('pauseIndicator');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const mobileControls = document.getElementById('mobileControls');
+        
+        if (pauseIndicator) pauseIndicator.classList.add('hidden');
+        if (pauseOverlay) pauseOverlay.classList.add('hidden');
         
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile || window.innerWidth <= 768) {
-            document.getElementById('mobileControls').classList.remove('hidden');
+            if (mobileControls) mobileControls.classList.remove('hidden');
         }
     },
 
     showGameOverOverlay: function() {
-        document.getElementById('finalScore').textContent = window.GameStatus.score;
+        console.log('showGameOverOverlay called');
         
-        document.getElementById('summaryScore').textContent = window.GameStatus.score;
-        document.getElementById('summaryFish').textContent = window.GameStatus.fishEaten;
-        document.getElementById('summaryExplosions').textContent = window.GameStatus.fishKilledByExplosion;
-        document.getElementById('summaryStage').textContent = window.GameStatus.stagesReached;
-        document.getElementById('summaryTime').textContent = window.GameStatus.formatTime(window.GameStatus.gameTime);
-        document.getElementById('summaryPowerups').textContent = window.GameStatus.powerupsCollected;
-        document.getElementById('summarySize').textContent = Math.round(window.GameStatus.maxSize);
+        const finalScore = document.getElementById('finalScore');
+        const summaryScore = document.getElementById('summaryScore');
+        const summaryFish = document.getElementById('summaryFish');
+        const summaryExplosions = document.getElementById('summaryExplosions');
+        const summaryStage = document.getElementById('summaryStage');
+        const summaryTime = document.getElementById('summaryTime');
+        const summaryPowerups = document.getElementById('summaryPowerups');
+        const summarySize = document.getElementById('summarySize');
+        const gameOverReason = document.getElementById('gameOverReason');
+        const deathCauseElement = document.getElementById('deathCause');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const mobileControls = document.getElementById('mobileControls');
         
-        this.updateGameOverFishPanel();
-        this.updateSkillStatsPanel();
+        console.log('Elements:', {
+            finalScore: finalScore ? 'exists' : 'null',
+            gameOverOverlay: gameOverOverlay ? 'exists' : 'null'
+        });
         
-        const stage = window.GameUtils.getCurrentStageBySize(window.GameStatus.maxSize);
+        if (finalScore) finalScore.textContent = window.GameStatus.score;
+        if (summaryScore) summaryScore.textContent = window.GameStatus.score;
+        if (summaryFish) summaryFish.textContent = window.GameStatus.fishEaten;
+        if (summaryExplosions) summaryExplosions.textContent = window.GameStatus.fishKilledByExplosion;
+        if (summaryStage) summaryStage.textContent = window.GameStatus.stagesReached;
+        if (summaryTime) {
+            try {
+                summaryTime.textContent = window.GameStatus.formatTime(window.GameStatus.gameTime);
+            } catch (e) {
+                summaryTime.textContent = '0:00';
+            }
+        }
+        if (summaryPowerups) summaryPowerups.textContent = window.GameStatus.powerupsCollected;
+        if (summarySize) summarySize.textContent = Math.round(window.GameStatus.maxSize);
+        
+        try {
+            this.updateGameOverFishPanel();
+        } catch (e) {
+            console.error('Error in updateGameOverFishPanel:', e);
+        }
+        
+        try {
+            this.updateSkillStatsPanel();
+        } catch (e) {
+            console.error('Error in updateSkillStatsPanel:', e);
+        }
+        
+        let stageName = '未知';
+        try {
+            const stage = window.GameUtils.getCurrentStageBySize(window.GameStatus.maxSize);
+            if (stage && stage.name) stageName = stage.name;
+        } catch (e) {
+            console.error('Error getting stage:', e);
+        }
+        
         let reasonText = '';
         let deathCauseText = '';
         
-        if (window.GameStatus.deathCause === window.DeathCause.EXPLOSION) {
-            reasonText = `最高达到: ${stage.name}，被海底爆炸消灭了！`;
-            deathCauseText = '💥 死亡原因：海底爆炸';
-        } else if (window.GameStatus.deathCause === window.DeathCause.EATEN) {
-            reasonText = `最高达到: ${stage.name}，被更大的鱼吃掉了！`;
-            deathCauseText = '🐟 死亡原因：被大鱼吃掉';
-        } else {
-            reasonText = `最高达到: ${stage.name}`;
-            deathCauseText = '';
+        try {
+            if (window.GameStatus.deathCause === window.DeathCause.EXPLOSION) {
+                reasonText = `最高达到: ${stageName}，被海底爆炸消灭了！`;
+                deathCauseText = '💥 死亡原因：海底爆炸';
+            } else if (window.GameStatus.deathCause === window.DeathCause.EATEN) {
+                reasonText = `最高达到: ${stageName}，被更大的鱼吃掉了！`;
+                deathCauseText = '🐟 死亡原因：被大鱼吃掉';
+            } else {
+                reasonText = `最高达到: ${stageName}`;
+                deathCauseText = '';
+            }
+        } catch (e) {
+            console.error('Error determining death cause:', e);
+            reasonText = `最高达到: ${stageName}`;
         }
         
-        document.getElementById('gameOverReason').textContent = reasonText;
+        if (gameOverReason) gameOverReason.textContent = reasonText;
         
-        const deathCauseElement = document.getElementById('deathCause');
         if (deathCauseText) {
-            deathCauseElement.textContent = deathCauseText;
-            deathCauseElement.classList.remove('hidden');
+            if (deathCauseElement) {
+                deathCauseElement.textContent = deathCauseText;
+                deathCauseElement.classList.remove('hidden');
+            }
         } else {
-            deathCauseElement.classList.add('hidden');
+            if (deathCauseElement) {
+                deathCauseElement.classList.add('hidden');
+            }
         }
         
-        document.getElementById('gameOverOverlay').classList.remove('hidden');
-        document.getElementById('mobileControls').classList.add('hidden');
+        if (gameOverOverlay) {
+            gameOverOverlay.classList.remove('hidden');
+            console.log('gameOverOverlay shown');
+        }
+        if (mobileControls) mobileControls.classList.add('hidden');
+        
+        console.log('Game Over overlay shown successfully');
     },
     
     updateGameOverFishPanel: function() {
@@ -670,25 +853,38 @@ window.UIManager = {
         const fishUsedName = document.getElementById('fishUsedName');
         const fishUsedType = document.getElementById('fishUsedType');
         
-        const fishConfig = window.GameStatus.getSelectedFishConfig();
-        if (fishConfig) {
-            const fishEmojis = {
-                normal: '🐟',
-                whale_shark: '🦈',
-                sword_fish: '🐡',
-                puffer_fish: '🐡'
-            };
-            const fishTypeLabels = {
-                normal: '均衡型',
-                whale_shark: '被动技能',
-                sword_fish: '主动技能 - ' + fishConfig.skillName,
-                puffer_fish: '主动技能 - ' + fishConfig.skillName
-            };
-            
-            fishUsedIcon.textContent = fishEmojis[window.GameStatus.selectedFishType] || '🐟';
-            fishUsedName.textContent = fishConfig.name;
-            fishUsedType.textContent = fishTypeLabels[window.GameStatus.selectedFishType] || '未知类型';
-            fishUsedPanel.classList.remove('hidden');
+        if (!fishUsedPanel) return;
+        
+        try {
+            const fishConfig = window.GameStatus.getSelectedFishConfig();
+            if (fishConfig) {
+                const fishEmojis = {
+                    normal: '🐟',
+                    whale_shark: '🦈',
+                    sword_fish: '🐡',
+                    puffer_fish: '🐡'
+                };
+                const fishTypeLabels = {
+                    normal: '均衡型',
+                    whale_shark: '被动技能',
+                    sword_fish: '主动技能 - ' + (fishConfig.skillName || '未知'),
+                    puffer_fish: '主动技能 - ' + (fishConfig.skillName || '未知')
+                };
+                
+                if (fishUsedIcon) {
+                    fishUsedIcon.textContent = fishEmojis[window.GameStatus.selectedFishType] || '🐟';
+                }
+                if (fishUsedName) {
+                    fishUsedName.textContent = fishConfig.name || '普通鱼';
+                }
+                if (fishUsedType) {
+                    fishUsedType.textContent = fishTypeLabels[window.GameStatus.selectedFishType] || '未知类型';
+                }
+                fishUsedPanel.classList.remove('hidden');
+            }
+        } catch (e) {
+            console.error('Error in updateGameOverFishPanel:', e);
+            fishUsedPanel.classList.add('hidden');
         }
     },
     
@@ -701,23 +897,32 @@ window.UIManager = {
         const skillStatCount1 = document.getElementById('skillStatCount1');
         const skillStatCount2 = document.getElementById('skillStatCount2');
         
-        const fishConfig = window.GameStatus.getSelectedFishConfig();
+        if (!skillStatsPanel) return;
         
-        if (fishConfig && fishConfig.skillType === window.SkillType.ACTIVE) {
-            skillStatsPanel.classList.remove('hidden');
+        try {
+            const fishConfig = window.GameStatus.getSelectedFishConfig();
             
-            if (window.GameStatus.selectedFishType === window.FishType.SWORD_FISH) {
-                skillStat1.classList.remove('hidden');
-                skillStat2.classList.add('hidden');
-                skillStatName1.textContent = fishConfig.skillName;
-                skillStatCount1.textContent = window.GameStatus.skill1Used + '次';
-            } else if (window.GameStatus.selectedFishType === window.FishType.PUFFER_FISH) {
-                skillStat1.classList.add('hidden');
-                skillStat2.classList.remove('hidden');
-                skillStatName2.textContent = fishConfig.skillName;
-                skillStatCount2.textContent = window.GameStatus.skill2Used + '次';
+            if (fishConfig && fishConfig.skillType === window.SkillType.ACTIVE) {
+                skillStatsPanel.classList.remove('hidden');
+                
+                if (window.GameStatus.selectedFishType === window.FishType.SWORD_FISH) {
+                    if (skillStat1) skillStat1.classList.remove('hidden');
+                    if (skillStat2) skillStat2.classList.add('hidden');
+                    if (skillStatName1) skillStatName1.textContent = fishConfig.skillName || '技能1';
+                    if (skillStatCount1) skillStatCount1.textContent = (window.GameStatus.skill1Used || 0) + '次';
+                } else if (window.GameStatus.selectedFishType === window.FishType.PUFFER_FISH) {
+                    if (skillStat1) skillStat1.classList.add('hidden');
+                    if (skillStat2) skillStat2.classList.remove('hidden');
+                    if (skillStatName2) skillStatName2.textContent = fishConfig.skillName || '技能2';
+                    if (skillStatCount2) skillStatCount2.textContent = (window.GameStatus.skill2Used || 0) + '次';
+                } else {
+                    skillStatsPanel.classList.add('hidden');
+                }
+            } else {
+                skillStatsPanel.classList.add('hidden');
             }
-        } else {
+        } catch (e) {
+            console.error('Error in updateSkillStatsPanel:', e);
             skillStatsPanel.classList.add('hidden');
         }
     }
