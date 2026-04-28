@@ -360,7 +360,14 @@ window.Player = class Player {
         const stage = window.GameUtils.getCurrentStageBySize(this.size);
         let bodyColor, darkColor, lightColor;
         
-        if (this.fishType === window.FishType.NORMAL) {
+        if (window.GameStatus.useCustomColor && 
+            window.GameStatus.customBodyColor && 
+            window.GameStatus.customDarkColor && 
+            window.GameStatus.customLightColor) {
+            bodyColor = window.GameStatus.customBodyColor;
+            darkColor = window.GameStatus.customDarkColor;
+            lightColor = window.GameStatus.customLightColor;
+        } else if (this.fishType === window.FishType.NORMAL) {
             bodyColor = stage ? stage.sizeColor : this.fishConfig.sizeColor;
             darkColor = this.getDarkerColor(bodyColor);
             lightColor = this.getLighterColor(bodyColor);

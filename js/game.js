@@ -81,6 +81,33 @@ window.Game = class Game {
         document.getElementById('resumeButton').addEventListener('click', () => this.resume());
         document.getElementById('restartButton').addEventListener('click', () => this.restart());
         document.getElementById('pauseRestartButton').addEventListener('click', () => this.restart());
+        
+        const pauseHomeBtn = document.getElementById('pauseHomeButton');
+        const gameOverHomeBtn = document.getElementById('gameOverHomeButton');
+        
+        if (pauseHomeBtn) {
+            pauseHomeBtn.addEventListener('click', () => this.goToHome());
+        }
+        if (gameOverHomeBtn) {
+            gameOverHomeBtn.addEventListener('click', () => this.goToHome());
+        }
+    }
+    
+    goToHome() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        window.GameStatus.state = window.GameState.START;
+        
+        this.player = null;
+        this.spawnManager = null;
+        this.collisionManager = null;
+        this.particleSystem = null;
+        this.explosionManager = null;
+        
+        window.UIManager.showStartOverlay();
     }
     
     useSkill1() {
@@ -465,6 +492,14 @@ window.Game = class Game {
         if (window.GameStatus.isGameOver()) return;
 
         window.UIManager.updateUI();
+        
+        if (this.player) {
+            try {
+                window.UIManager.updateJoystickIndicator(this.player, this);
+            } catch (e) {
+                console.error('Error updating joystick indicator:', e);
+            }
+        }
     }
 
     render() {

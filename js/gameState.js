@@ -24,6 +24,11 @@ window.GameStatus = {
     skill1Used: 0,
     skill2Used: 0,
     
+    useCustomColor: false,
+    customBodyColor: null,
+    customDarkColor: null,
+    customLightColor: null,
+    
     init: function() {
         this.state = window.GameState.START;
         this.score = 0;
@@ -41,6 +46,10 @@ window.GameStatus = {
         this.selectedFishType = window.FishType.NORMAL;
         this.skill1Used = 0;
         this.skill2Used = 0;
+        this.useCustomColor = false;
+        this.customBodyColor = null;
+        this.customDarkColor = null;
+        this.customLightColor = null;
     },
     
     reset: function() {
@@ -57,6 +66,20 @@ window.GameStatus = {
         this.fishKilledByExplosion = 0;
         this.skill1Used = 0;
         this.skill2Used = 0;
+    },
+    
+    setCustomColors: function(bodyColor, darkColor, lightColor) {
+        this.useCustomColor = true;
+        this.customBodyColor = bodyColor;
+        this.customDarkColor = darkColor;
+        this.customLightColor = lightColor;
+    },
+    
+    clearCustomColors: function() {
+        this.useCustomColor = false;
+        this.customBodyColor = null;
+        this.customDarkColor = null;
+        this.customLightColor = null;
     },
     
     getDifficultyConfig: function() {
