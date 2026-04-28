@@ -386,14 +386,27 @@ window.Game = class Game {
         if (window.GameStatus.isGameOver()) return;
         
         window.GameStatus.state = window.GameState.GAME_OVER;
+        console.log('Game state set to GAME_OVER');
         
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
             this.animationId = null;
+            console.log('Animation cancelled');
         }
         
-        window.UIManager.updateUI();
-        window.UIManager.showGameOverOverlay();
+        try {
+            window.UIManager.updateUI();
+        } catch (e) {
+            console.error('Error in updateUI during gameOver:', e);
+        }
+        
+        try {
+            window.UIManager.showGameOverOverlay();
+        } catch (e) {
+            console.error('Error in showGameOverOverlay:', e);
+        }
+        
+        console.log('Game Over process completed');
     }
 
     gameLoop(currentTime = performance.now()) {
