@@ -531,11 +531,62 @@ window.UIManager = {
         const skillHintText2 = document.getElementById('skillHintText2');
         
         const fishConfig = window.GameStatus.getSelectedFishConfig();
+        const controlMode = window.GameStatus.controlMode;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        
+        if (isMobile) {
+            controlHintLeft.classList.add('hidden');
+            controlHintRight.classList.add('hidden');
+            return;
+        }
         
         controlHintLeft.classList.remove('hidden');
         controlHintRight.classList.remove('hidden');
         
-        if (fishConfig) {
+        const hintTitle = controlHintLeft.querySelector('.hint-title');
+        const hintOr = controlHintLeft.querySelector('.hint-or');
+        const keyBtns = controlHintLeft.querySelectorAll('.key-btn');
+        const keyHints = controlHintLeft.querySelectorAll('.key-hint');
+        
+        if (controlMode === window.ControlMode.MOUSE) {
+            if (hintTitle) hintTitle.textContent = '移动';
+            if (hintOr) hintOr.textContent = '鼠标跟随';
+            
+            keyBtns.forEach(btn => {
+                btn.style.display = 'none';
+            });
+            
+            keyHints.forEach(hint => {
+                hint.style.display = 'none';
+            });
+        } else if (controlMode === window.ControlMode.KEYBOARD) {
+            if (hintTitle) hintTitle.textContent = '移动';
+            if (hintOr) hintOr.textContent = 'WASD 键盘';
+            
+            keyBtns.forEach((btn, index) => {
+                if (index === 0) btn.style.display = 'inline-flex';
+                else if (index >= 1 && index <= 3) btn.style.display = 'inline-flex';
+            });
+            
+            keyHints.forEach((hint, index) => {
+                if (index <= 3) hint.style.display = 'inline-block';
+            });
+        } else if (controlMode === window.ControlMode.TOUCH) {
+            if (hintTitle) hintTitle.textContent = '移动';
+            if (hintOr) hintOr.textContent = '触屏控制';
+            
+            keyBtns.forEach(btn => {
+                btn.style.display = 'none';
+            });
+            
+            keyHints.forEach(hint => {
+                hint.style.display = 'none';
+            });
+        }
+        
+        const hasActiveSkill = fishConfig && fishConfig.skillType === window.SkillType.ACTIVE;
+        
+        if (hasActiveSkill) {
             if (window.GameStatus.selectedFishType === window.FishType.SWORD_FISH) {
                 skillHint1.classList.remove('hidden');
                 skillHint2.classList.add('hidden');
@@ -548,6 +599,9 @@ window.UIManager = {
                 skillHint1.classList.add('hidden');
                 skillHint2.classList.add('hidden');
             }
+        } else {
+            skillHint1.classList.add('hidden');
+            skillHint2.classList.add('hidden');
         }
     },
 
