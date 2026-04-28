@@ -157,6 +157,25 @@ window.UIManager = {
     previousSpeedBoost: false,
     previousShield: false,
     
+    fishDescriptions: {
+        normal: {
+            title: '普通鱼 - 均衡型',
+            lines: ['各项属性均衡', '适合新手体验']
+        },
+        whale_shark: {
+            title: '鲸鲨 - 被动技能',
+            lines: ['初始体型 +50%', '移动速度 -20%']
+        },
+        sword_fish: {
+            title: '剑鱼 - 主动技能 (J)',
+            lines: ['按J突进', '吃掉路径上所有可吞噬的鱼', '冷却: 15秒']
+        },
+        puffer_fish: {
+            title: '河豚 - 主动技能 (K)',
+            lines: ['按K膨胀', '体型+80%，可吃比膨胀后小的鱼', '期间速度-50%', '冷却: 15秒']
+        }
+    },
+    
     init: function() {
         this.previousStageIndex = 0;
         this.previousSpeedBoost = false;
@@ -167,7 +186,10 @@ window.UIManager = {
         this.bindDifficultySelector();
         this.bindFishSelector();
         this.bindControlSelector();
+        this.bindColorSelector();
         this.checkMobileDevice();
+        
+        this.updateFishDescription('normal');
     },
     
     bindDifficultySelector: function() {
@@ -207,7 +229,129 @@ window.UIManager = {
         
         const fishType = button.dataset.fish;
         window.GameStatus.setSelectedFishType(fishType);
+        this.updateFishDescription(fishType);
         console.log('Fish type selected:', fishType);
+    },
+    
+    updateFishDescription: function(fishType) {
+        const descTitle = document.getElementById('fishDescTitle');
+        const descContent = document.getElementById('fishDescContent');
+        
+        if (!descTitle || !descContent) return;
+        
+        const desc = this.fishDescriptions[fishType];
+        if (!desc) return;
+        
+        descTitle.textContent = desc.title;
+        
+        descContent.innerHTML = '';
+        desc.lines.forEach(line => {
+            const div = document.createElement('div');
+            div.className = 'desc-line';
+            if (line.includes('+') && !line.includes('-')) {
+                div.classList.add('highlight');
+            } else if (line.includes('-') && !line.includes('+')) {
+                div.classList.add('dim');
+            } else if (line.includes('冷却')) {
+                div.classList.add('cooldown');
+            }
+            div.textContent = line;
+            descContent.appendChild(div);
+        });
+    },
+    
+    bindColorSelector: function() {
+        const colorToggle = document.getElementById('colorToggle');
+        const colorPickerSection = document.getElementById('colorPickerSection');
+        const toggleSwitch = colorToggle ? colorToggle.querySelector('.toggle-switch') : null;
+        
+        if (colorToggle && toggleSwitch && colorPickerSection) {
+            colorToggle.addEventListener('click', () => {
+                const isActive = toggleSwitch.classList.contains('active');
+                
+                if (isActive) {
+                    toggleSwitch.classList.remove('active');
+                    colorPickerSection.classList.add('hidden');
+                    window.GameStatus.clearCustomColors();
+                } else {
+                    toggleSwitch.classList.add('active');
+                    colorPickerSection.classList.remove('hidden');
+                    this.applyCurrentColors();
+                }
+            });
+        }
+        
+        const bodyPicker = document.getElementById('bodyColorPicker');
+        const darkPicker = document.getElementById('darkColorPicker');
+        const lightPicker = document.getElementById('lightColorPicker');
+        
+        const updateColorValue = (pickerId, valueId) => {
+            const picker = document.getElementById(pickerId);
+            const valueEl = document.getElementById(valueId);
+            if (picker && valueEl) {
+                picker.addEventListener('input', () => {
+                    valueEl.textContent = picker.value;
+                    this.applyCurrentColors();
+                });
+            }
+        };
+        
+        updateColorValue('bodyColorPicker', 'bodyColorValue');
+        updateColorValue('darkColorPicker', 'darkColorValue');
+        updateColorValue('lightColorPicker', 'lightColorValue');
+        
+        const presetColors = document.querySelectorAll('.preset-color');
+        presetColors.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const bodyColor = btn.dataset.body;
+                const darkColor = btn.dataset.dark;
+                const lightColor = btn.dataset.light;
+                
+                this.setColorPickers(bodyColor, darkColor, lightColor);
+                this.applyCurrentColors();
+            });
+        });
+    },
+    
+    setColorPickers: function(bodyColor, darkColor, lightColor) {
+        const bodyPicker = document.getElementById('bodyColorPicker');
+        const darkPicker = document.getElementById('darkColorPicker');
+        const lightPicker = document.getElementById('lightColorPicker');
+        const bodyValue = document.getElementById('bodyColorValue');
+        const darkValue = document.getElementById('darkColorValue');
+        const lightValue = document.getElementById('lightColorValue');
+        
+        if (bodyPicker && bodyValue) {
+            bodyPicker.value = bodyColor;
+            bodyValue.textContent = bodyColor;
+        }
+        if (darkPicker && darkValue) {
+            darkPicker.value = darkColor;
+            darkValue.textContent = darkColor;
+        }
+        if (lightPicker && lightValue) {
+            lightPicker.value = lightColor;
+            lightValue.textContent = lightColor;
+        }
+    },
+    
+    applyCurrentColors: function() {
+        const bodyPicker = document.getElementById('bodyColorPicker');
+        const darkPicker = document.getElementById('darkColorPicker');
+        const lightPicker = document.getElementById('lightColorPicker');
+        const previewBody = document.getElementById('previewBody');
+        
+        if (bodyPicker && darkPicker && lightPicker) {
+            const bodyColor = bodyPicker.value;
+            const darkColor = darkPicker.value;
+            const lightColor = lightPicker.value;
+            
+            window.GameStatus.setCustomColors(bodyColor, darkColor, lightColor);
+            
+            if (previewBody) {
+                previewBody.style.background = `linear-gradient(135deg, ${bodyColor} 0%, ${darkColor} 100%)`;
+            }
+        }
     },
     
     bindControlSelector: function() {
@@ -724,12 +868,92 @@ window.UIManager = {
             if (skillHint1) skillHint1.classList.add('hidden');
             if (skillHint2) skillHint2.classList.add('hidden');
         }
+        
+        const joystickLabel = document.getElementById('joystickLabel');
+        if (joystickLabel) {
+            if (controlMode === window.ControlMode.MOUSE) {
+                joystickLabel.textContent = '鼠标跟随';
+            } else if (controlMode === window.ControlMode.KEYBOARD) {
+                joystickLabel.textContent = 'WASD 控制';
+            } else {
+                joystickLabel.textContent = '触屏控制';
+            }
+        }
+    },
+    
+    updateJoystickIndicator: function(player, gameInstance) {
+        const directionIndicator = document.getElementById('directionIndicator');
+        if (!directionIndicator || !player) return;
+        
+        let directionX = 0;
+        let directionY = 0;
+        
+        if (window.GameStatus.controlMode === window.ControlMode.MOUSE) {
+            const dx = gameInstance.mouse.x - player.x;
+            const dy = gameInstance.mouse.y - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 10) {
+                directionX = dx / distance;
+                directionY = dy / distance;
+            }
+        } else if (window.GameStatus.controlMode === window.ControlMode.KEYBOARD) {
+            if (gameInstance.keys.w || gameInstance.keys.arrowup) directionY = -1;
+            if (gameInstance.keys.s || gameInstance.keys.arrowdown) directionY = 1;
+            if (gameInstance.keys.a || gameInstance.keys.arrowleft) directionX = -1;
+            if (gameInstance.keys.d || gameInstance.keys.arrowright) directionX = 1;
+            
+            if (directionX !== 0 || directionY !== 0) {
+                const length = Math.sqrt(directionX * directionX + directionY * directionY);
+                directionX /= length;
+                directionY /= length;
+            }
+        } else if (window.GameStatus.controlMode === window.ControlMode.TOUCH) {
+            if (gameInstance.touchInput.active && gameInstance.touchInput.joystickCenter && gameInstance.touchInput.joystickCurrent) {
+                const dx = gameInstance.touchInput.joystickCurrent.x - gameInstance.touchInput.joystickCenter.x;
+                const dy = gameInstance.touchInput.joystickCurrent.y - gameInstance.touchInput.joystickCenter.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 10) {
+                    directionX = dx / distance;
+                    directionY = dy / distance;
+                }
+            }
+        }
+        
+        const maxOffset = 32;
+        const translateX = directionX * maxOffset;
+        const translateY = directionY * maxOffset;
+        
+        const hasDirection = directionX !== 0 || directionY !== 0;
+        if (hasDirection) {
+            directionIndicator.style.transform = `translate(${translateX}px, ${translateY}px) scale(0.8)`;
+            directionIndicator.style.background = 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)';
+            directionIndicator.style.boxShadow = '0 0 20px rgba(33, 150, 243, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.5)';
+        } else {
+            directionIndicator.style.transform = 'translate(0, 0) scale(0.5)';
+            directionIndicator.style.background = 'linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%)';
+            directionIndicator.style.boxShadow = '0 0 10px rgba(100, 181, 246, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.3)';
+        }
     },
 
     showPauseOverlay: function() {
         const pauseIndicator = document.getElementById('pauseIndicator');
         const pauseOverlay = document.getElementById('pauseOverlay');
         const mobileControls = document.getElementById('mobileControls');
+        const pauseScore = document.getElementById('pauseScore');
+        const pauseTime = document.getElementById('pauseTime');
+        
+        if (pauseScore) {
+            pauseScore.textContent = window.GameStatus.score;
+        }
+        if (pauseTime) {
+            try {
+                pauseTime.textContent = window.GameStatus.formatTime(window.GameStatus.gameTime);
+            } catch (e) {
+                pauseTime.textContent = '0:00';
+            }
+        }
         
         if (pauseIndicator) pauseIndicator.classList.remove('hidden');
         if (pauseOverlay) pauseOverlay.classList.remove('hidden');
