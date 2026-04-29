@@ -5,6 +5,9 @@ window.Player = class Player {
         this.fishType = fishType;
         this.fishConfig = window.CONFIG.fishTypes[fishType];
         
+        this.skinConfig = window.GameStatus.getCurrentSkinConfig(fishType);
+        this.hasSkin = this.skinConfig !== null;
+        
         this.baseSize = this.fishConfig.baseSize;
         this.size = Math.max(size, this.baseSize);
         this.baseSpeed = this.fishConfig.baseSpeed;
@@ -37,6 +40,9 @@ window.Player = class Player {
         this.inflateCooldown = 0;
         this.inflateAnimationPhase = 0;
         this.spikePhase = 0;
+        
+        this.skinEffectPhase = 0;
+        this.skinParticles = [];
     }
 
     getEffectiveSize() {
@@ -359,9 +365,14 @@ window.Player = class Player {
 
     renderFish(ctx, effectiveSize) {
         const stage = window.GameUtils.getCurrentStageBySize(this.size);
-        let bodyColor, darkColor, lightColor;
+        let bodyColor, darkColor, lightColor, glowColor;
         
-        if (window.GameStatus.useCustomColor && 
+        if (this.hasSkin && this.skinConfig && this.skinConfig.colors) {
+            bodyColor = this.skinConfig.colors.bodyColor;
+            darkColor = this.skinConfig.colors.darkColor;
+            lightColor = this.skinConfig.colors.lightColor;
+            glowColor = this.skinConfig.colors.glowColor;
+        } else if (window.GameStatus.useCustomColor && 
             window.GameStatus.customBodyColor && 
             window.GameStatus.customDarkColor && 
             window.GameStatus.customLightColor) {
@@ -386,6 +397,10 @@ window.Player = class Player {
         bodyGradient.addColorStop(0.7, bodyColor);
         bodyGradient.addColorStop(1, darkColor);
 
+        if (this.hasSkin && this.skinConfig) {
+            this.renderSkinEffect(ctx, effectiveSize, glowColor);
+        }
+
         switch (this.fishType) {
             case window.FishType.SWORD_FISH:
                 this.renderSwordFish(ctx, effectiveSize, bodyGradient, darkColor, lightColor);
@@ -398,6 +413,10 @@ window.Player = class Player {
                 break;
             default:
                 this.renderNormalFish(ctx, effectiveSize, bodyGradient, darkColor, lightColor);
+        }
+
+        if (this.hasSkin && this.skinConfig) {
+            this.renderSkinOverlay(ctx, effectiveSize, glowColor);
         }
     }
 
@@ -753,6 +772,302 @@ window.Player = class Player {
         const g = parseInt(hex.slice(3, 5), 16);
         const b = parseInt(hex.slice(5, 7), 16);
         return `rgb(${Math.min(255, r + 60)}, ${Math.min(255, g + 60)}, ${Math.min(255, b + 60)})`;
+    }
+
+    renderSkinEffect(ctx, effectiveSize, glowColor) {
+        if (!this.skinConfig) return;
+        
+        const skinId = this.skinConfig.skinId;
+        this.skinEffectPhase += 0.05;
+
+        switch (skinId) {
+            case window.SkinId.MOONLIGHT_FLOW:
+                this.renderMoonlightFlowEffect(ctx, effectiveSize, glowColor);
+                break;
+            case window.SkinId.STAR_DOMINATOR:
+                this.renderStarDominatorEffect(ctx, effectiveSize, glowColor);
+                break;
+            case window.SkinId.RED_BLADE:
+                this.renderRedBladeEffect(ctx, effectiveSize, glowColor);
+                break;
+            case window.SkinId.GOLD_GUARDIAN:
+                this.renderGoldGuardianEffect(ctx, effectiveSize, glowColor);
+                break;
+        }
+    }
+
+    renderMoonlightFlowEffect(ctx, effectiveSize, glowColor) {
+        const pulse = Math.sin(this.skinEffectPhase) * 0.1 + 0.9;
+        const glowSize = effectiveSize * 1.3 * pulse;
+        
+        const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
+        glowGradient.addColorStop(0, 'rgba(200, 230, 255, 0.3)');
+        glowGradient.addColorStop(0.5, 'rgba(173, 216, 230, 0.15)');
+        glowGradient.addColorStop(1, 'rgba(173, 216, 230, 0)');
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+
+        ctx.save();
+        ctx.rotate(this.skinEffectPhase * 0.3);
+        for (let i = 0; i < 8; i++) {
+            const angle = (Math.PI * 2 / 8) * i;
+            const dist = effectiveSize * (0.6 + Math.sin(this.skinEffectPhase + i) * 0.2);
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+            const size = 2 + Math.sin(this.skinEffectPhase * 2 + i) * 1;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(200, 230, 255, 0.6)';
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    renderStarDominatorEffect(ctx, effectiveSize, glowColor) {
+        const pulse = Math.sin(this.skinEffectPhase * 1.5) * 0.1 + 0.95;
+        const glowSize = effectiveSize * 1.5 * pulse;
+        
+        const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
+        glowGradient.addColorStop(0, 'rgba(138, 43, 226, 0.35)');
+        glowGradient.addColorStop(0.3, 'rgba(75, 0, 130, 0.2)');
+        glowGradient.addColorStop(0.6, 'rgba(25, 25, 112, 0.1)');
+        glowGradient.addColorStop(1, 'rgba(0, 0, 50, 0)');
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+
+        const starCount = 20;
+        for (let i = 0; i < starCount; i++) {
+            const angle = (Math.PI * 2 / starCount) * i + this.skinEffectPhase * 0.2;
+            const dist = effectiveSize * (0.5 + Math.sin(this.skinEffectPhase * 0.5 + i * 0.3) * 0.4);
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+            
+            const twinkle = Math.sin(this.skinEffectPhase * 3 + i) * 0.5 + 0.5;
+            const size = (1 + twinkle) * (effectiveSize * 0.03);
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(this.skinEffectPhase * 0.5 + i);
+            
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + twinkle * 0.5})`;
+            ctx.beginPath();
+            for (let j = 0; j < 4; j++) {
+                const starAngle = (Math.PI / 2) * j;
+                const outerX = Math.cos(starAngle) * size;
+                const outerY = Math.sin(starAngle) * size;
+                const innerX = Math.cos(starAngle + Math.PI / 4) * size * 0.4;
+                const innerY = Math.sin(starAngle + Math.PI / 4) * size * 0.4;
+                
+                if (j === 0) {
+                    ctx.moveTo(outerX, outerY);
+                } else {
+                    ctx.lineTo(outerX, outerY);
+                }
+                ctx.lineTo(innerX, innerY);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    renderRedBladeEffect(ctx, effectiveSize, glowColor) {
+        const pulse = Math.sin(this.skinEffectPhase * 2) * 0.1 + 0.9;
+        const glowSize = effectiveSize * 1.3 * pulse;
+        
+        const glowGradient = ctx.createRadialGradient(
+            effectiveSize * 0.5, 0, 0,
+            effectiveSize * 0.5, 0, glowSize
+        );
+        glowGradient.addColorStop(0, 'rgba(255, 60, 0, 0.4)');
+        glowGradient.addColorStop(0.5, 'rgba(255, 30, 0, 0.2)');
+        glowGradient.addColorStop(1, 'rgba(200, 0, 0, 0)');
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+
+        const streakCount = 5;
+        for (let i = 0; i < streakCount; i++) {
+            const offset = (i - streakCount / 2) * effectiveSize * 0.12;
+            const length = effectiveSize * (0.8 + Math.sin(this.skinEffectPhase + i) * 0.3);
+            const alpha = 0.3 + Math.sin(this.skinEffectPhase * 2 + i * 0.5) * 0.2;
+            
+            ctx.beginPath();
+            ctx.moveTo(effectiveSize * 0.8, offset);
+            ctx.lineTo(effectiveSize * 0.8 + length, offset * 0.5);
+            ctx.strokeStyle = `rgba(255, 100, 50, ${alpha})`;
+            ctx.lineWidth = 2 + Math.sin(this.skinEffectPhase * 3 + i) * 1;
+            ctx.stroke();
+        }
+
+        const sparkCount = 8;
+        for (let i = 0; i < sparkCount; i++) {
+            const angle = (Math.PI / 8) * (i - sparkCount / 2);
+            const dist = effectiveSize * (1.0 + Math.sin(this.skinEffectPhase * 2 + i) * 0.2);
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+            const size = 1 + Math.sin(this.skinEffectPhase * 4 + i) * 0.5;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 200, 100, 0.8)';
+            ctx.fill();
+        }
+    }
+
+    renderGoldGuardianEffect(ctx, effectiveSize, glowColor) {
+        const pulse = Math.sin(this.skinEffectPhase * 1.2) * 0.1 + 0.9;
+        const glowSize = effectiveSize * 1.4 * pulse;
+        
+        const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
+        glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.35)');
+        glowGradient.addColorStop(0.4, 'rgba(255, 193, 7, 0.2)');
+        glowGradient.addColorStop(0.7, 'rgba(255, 152, 0, 0.1)');
+        glowGradient.addColorStop(1, 'rgba(200, 100, 0, 0)');
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+
+        ctx.save();
+        ctx.rotate(this.skinEffectPhase * 0.5);
+        
+        const ringCount = 3;
+        for (let i = 0; i < ringCount; i++) {
+            const ringSize = effectiveSize * (0.8 + i * 0.2);
+            const alpha = 0.15 + Math.sin(this.skinEffectPhase + i * 0.8) * 0.1;
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, ringSize, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 215, 0, ${alpha})`;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 10]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.restore();
+
+        const beadCount = 12;
+        for (let i = 0; i < beadCount; i++) {
+            const angle = (Math.PI * 2 / beadCount) * i + this.skinEffectPhase * 0.3;
+            const dist = effectiveSize * (0.9 + Math.sin(this.skinEffectPhase * 1.5 + i * 0.5) * 0.15);
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+            const size = effectiveSize * (0.04 + Math.sin(this.skinEffectPhase * 2 + i) * 0.01);
+            
+            const beadGradient = ctx.createRadialGradient(
+                x - size * 0.3, y - size * 0.3, 0,
+                x, y, size
+            );
+            beadGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+            beadGradient.addColorStop(0.3, 'rgba(255, 248, 220, 0.8)');
+            beadGradient.addColorStop(0.7, 'rgba(255, 215, 0, 0.7)');
+            beadGradient.addColorStop(1, 'rgba(218, 165, 32, 0.5)');
+            
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = beadGradient;
+            ctx.fill();
+        }
+    }
+
+    renderSkinOverlay(ctx, effectiveSize, glowColor) {
+        if (!this.skinConfig) return;
+        
+        const skinId = this.skinConfig.skinId;
+        const baseAlpha = 0.15 + Math.sin(this.skinEffectPhase) * 0.05;
+
+        switch (skinId) {
+            case window.SkinId.MOONLIGHT_FLOW:
+                const moonGradient = ctx.createRadialGradient(
+                    effectiveSize * 0.2, -effectiveSize * 0.1, 0,
+                    0, 0, effectiveSize * 0.8
+                );
+                moonGradient.addColorStop(0, `rgba(200, 230, 255, ${baseAlpha})`);
+                moonGradient.addColorStop(0.5, `rgba(173, 216, 230, ${baseAlpha * 0.5})`);
+                moonGradient.addColorStop(1, 'rgba(173, 216, 230, 0)');
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, effectiveSize * 0.8, 0, Math.PI * 2);
+                ctx.fillStyle = moonGradient;
+                ctx.fill();
+                break;
+
+            case window.SkinId.STAR_DOMINATOR:
+                const starCount = 6;
+                for (let i = 0; i < starCount; i++) {
+                    const angle = (Math.PI * 2 / starCount) * i + this.skinEffectPhase * 0.3;
+                    const dist = effectiveSize * (0.3 + Math.sin(this.skinEffectPhase * 0.5 + i) * 0.15);
+                    const x = Math.cos(angle) * dist;
+                    const y = Math.sin(angle) * dist;
+                    const size = effectiveSize * (0.04 + Math.sin(this.skinEffectPhase * 2 + i) * 0.015);
+                    
+                    const twinkle = Math.sin(this.skinEffectPhase * 3 + i * 0.7) * 0.3 + 0.5;
+                    
+                    const starGradient = ctx.createRadialGradient(x, y, 0, x, y, size * 2);
+                    starGradient.addColorStop(0, `rgba(255, 255, 255, ${twinkle * 0.4})`);
+                    starGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+                    ctx.fillStyle = starGradient;
+                    ctx.fill();
+                }
+                break;
+
+            case window.SkinId.RED_BLADE:
+                const bladeGradient = ctx.createLinearGradient(
+                    effectiveSize * 0.5, 0,
+                    effectiveSize * 1.6, 0
+                );
+                bladeGradient.addColorStop(0, `rgba(255, 100, 50, ${baseAlpha * 1.5})`);
+                bladeGradient.addColorStop(0.5, `rgba(255, 50, 0, ${baseAlpha})`);
+                bladeGradient.addColorStop(1, 'rgba(200, 0, 0, 0)');
+                
+                ctx.beginPath();
+                ctx.moveTo(effectiveSize * 0.6, -effectiveSize * 0.05);
+                ctx.lineTo(effectiveSize * 1.5, 0);
+                ctx.lineTo(effectiveSize * 0.6, effectiveSize * 0.05);
+                ctx.closePath();
+                ctx.fillStyle = bladeGradient;
+                ctx.fill();
+                break;
+
+            case window.SkinId.GOLD_GUARDIAN:
+                const goldCount = 8;
+                for (let i = 0; i < goldCount; i++) {
+                    const angle = (Math.PI * 2 / goldCount) * i + this.skinEffectPhase * 0.4;
+                    const dist = effectiveSize * (0.45 + Math.sin(this.skinEffectPhase + i * 0.6) * 0.1);
+                    const x = Math.cos(angle) * dist;
+                    const y = Math.sin(angle) * dist;
+                    const size = effectiveSize * (0.035 + Math.sin(this.skinEffectPhase * 1.8 + i) * 0.01);
+                    
+                    const beadGradient = ctx.createRadialGradient(
+                        x - size * 0.3, y - size * 0.3, 0,
+                        x, y, size
+                    );
+                    beadGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                    beadGradient.addColorStop(0.4, 'rgba(255, 248, 220, 0.7)');
+                    beadGradient.addColorStop(0.8, 'rgba(255, 215, 0, 0.5)');
+                    beadGradient.addColorStop(1, 'rgba(218, 165, 32, 0.2)');
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = beadGradient;
+                    ctx.fill();
+                }
+                break;
+        }
     }
 };
 

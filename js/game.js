@@ -20,6 +20,7 @@ window.Game = class Game {
         };
         
         this.explosionManager = null;
+        this.pearlClamManager = null;
         
         this.init();
     }
@@ -106,6 +107,7 @@ window.Game = class Game {
         this.collisionManager = null;
         this.particleSystem = null;
         this.explosionManager = null;
+        this.pearlClamManager = null;
         
         window.UIManager.showStartOverlay();
     }
@@ -382,6 +384,7 @@ window.Game = class Game {
         this.collisionManager = new window.CollisionManager(this);
         this.particleSystem = new window.ParticleSystem();
         this.explosionManager = new window.ExplosionManager(this);
+        this.pearlClamManager = new window.PearlClamManager(this);
 
         window.UIManager.hideAllOverlays();
 
@@ -487,6 +490,27 @@ window.Game = class Game {
 
         if (this.explosionManager) {
             this.explosionManager.update(deltaTime);
+        }
+        
+        if (window.GameStatus.isGameOver()) return;
+
+        if (this.pearlClamManager) {
+            this.pearlClamManager.update(deltaTime);
+            
+            const pearlsCollected = this.pearlClamManager.checkPearlCollection(this.player);
+            if (pearlsCollected > 0) {
+                window.GameStatus.addPearls(pearlsCollected);
+                console.log('Pearls collected:', pearlsCollected, 'Total:', window.GameStatus.pearls);
+            }
+            
+            if (this.pearlClamManager.checkTrapCollision(this.player)) {
+                window.GameStatus.setDeathCause(window.DeathCause.CLAM_TRAP);
+                if (this.particleSystem) {
+                    this.particleSystem.createClamTrapEffect(this.player.x, this.player.y);
+                }
+                this.gameOver();
+                return;
+            }
         }
         
         if (window.GameStatus.isGameOver()) return;
