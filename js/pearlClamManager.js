@@ -16,8 +16,8 @@ window.PearlClam = class PearlClam {
         this.pearlSize = window.CONFIG.pearlClam.pearlSize;
         this.trapRadius = window.CONFIG.pearlClam.trapRadius;
         
-        this.openAngle = 0;
-        this.maxOpenAngle = Math.PI * 0.6;
+        this.openProgress = 0;
+        this.maxOpenOffset = this.size * 0.35;
         this.animationPhase = 0;
         this.pearlCollected = false;
         
@@ -31,6 +31,9 @@ window.PearlClam = class PearlClam {
         this.warningExclamationPhase = 0;
         
         this.hasTrappedPlayer = false;
+        
+        this.pearlWorldX = this.x;
+        this.pearlWorldY = this.y + this.size * 0.1;
     }
 
     update(deltaTime) {
@@ -56,6 +59,9 @@ window.PearlClam = class PearlClam {
                 this.updateClosing(deltaMs);
                 break;
         }
+        
+        const floatOffset = Math.sin(this.floatPhase) * 3;
+        this.pearlWorldY = this.y + floatOffset + this.size * 0.1;
     }
 
     updateClosed(deltaMs) {
@@ -66,9 +72,9 @@ window.PearlClam = class PearlClam {
     }
 
     updateOpening(deltaMs) {
-        this.openAngle = Math.min(this.openAngle + deltaMs * 0.002, this.maxOpenAngle);
+        this.openProgress = Math.min(this.openProgress + deltaMs * 0.001, 1);
         
-        if (this.openAngle >= this.maxOpenAngle) {
+        if (this.openProgress >= 1) {
             this.state = window.PearlClamState.OPEN;
             this.lifetime = 0;
         }
@@ -92,9 +98,9 @@ window.PearlClam = class PearlClam {
     }
 
     updateClosing(deltaMs) {
-        this.openAngle = Math.max(this.openAngle - deltaMs * 0.005, 0);
+        this.openProgress = Math.max(this.openProgress - deltaMs * 0.0025, 0);
         
-        if (this.openAngle <= 0) {
+        if (this.openProgress <= 0) {
             this.state = window.PearlClamState.DEAD;
         }
     }
@@ -120,11 +126,12 @@ window.PearlClam = class PearlClam {
             return false;
         }
         
-        const dx = playerX - this.x;
-        const dy = playerY - (this.size * 0.2);
+        const dx = playerX - this.pearlWorldX;
+        const dy = playerY - this.pearlWorldY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        return distance < (this.pearlSize + playerSize * 0.5);
+        const collectRange = this.pearlSize * 2 + playerSize * 0.5;
+        return distance < collectRange;
     }
 
     collectPearl() {
@@ -139,9 +146,10 @@ window.PearlClam = class PearlClam {
 
     render(ctx) {
         const floatOffset = Math.sin(this.floatPhase) * 3;
+        const currentY = this.y + floatOffset;
         
         ctx.save();
-        ctx.translate(this.x, this.y + floatOffset);
+        ctx.translate(this.x, currentY);
         
         this.renderBackgroundGlow(ctx);
         this.renderClamShell(ctx);
@@ -183,37 +191,22 @@ window.PearlClam = class PearlClam {
     renderClamShell(ctx) {
         const shellWidth = this.size * 0.9;
         const shellHeight = this.size * 0.5;
+        const openOffset = this.openProgress * this.maxOpenOffset;
+        
+        this.renderBottomShell(ctx, shellWidth, shellHeight);
         
         ctx.save();
-        
-        ctx.rotate(-this.openAngle / 2);
-        this.renderShellHalf(ctx, shellWidth, shellHeight, -1);
+        ctx.translate(0, -openOffset);
+        ctx.rotate(-this.openProgress * 0.5);
+        this.renderTopShell(ctx, shellWidth, shellHeight);
         ctx.restore();
         
-        ctx.save();
-        ctx.rotate(this.openAngle / 2);
-        this.renderShellHalf(ctx, shellWidth, shellHeight, 1);
-        ctx.restore();
-        
-        ctx.beginPath();
-        ctx.arc(0, 0, shellWidth * 0.15, 0, Math.PI * 2);
-        const hingeGradient = ctx.createRadialGradient(
-            -shellWidth * 0.05, -shellWidth * 0.05, 0,
-            0, 0, shellWidth * 0.15
-        );
-        hingeGradient.addColorStop(0, '#8B7355');
-        hingeGradient.addColorStop(0.5, '#6B5344');
-        hingeGradient.addColorStop(1, '#4A3728');
-        ctx.fillStyle = hingeGradient;
-        ctx.fill();
-        ctx.strokeStyle = '#3A2718';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        this.renderHinge(ctx, shellWidth);
     }
 
-    renderShellHalf(ctx, width, height, direction) {
+    renderBottomShell(ctx, width, height) {
         const shellGradient = ctx.createRadialGradient(
-            -width * 0.1, -height * 0.1, 0,
+            -width * 0.1, height * 0.1, 0,
             0, 0, width
         );
         shellGradient.addColorStop(0, '#E8DCC8');
@@ -222,15 +215,8 @@ window.PearlClam = class PearlClam {
         shellGradient.addColorStop(1, '#A89070');
         
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.quadraticCurveTo(
-            width * 0.5 * direction, -height * 0.3,
-            width * direction, 0
-        );
-        ctx.quadraticCurveTo(
-            width * 0.5 * direction, height * 0.3,
-            0, 0
-        );
+        ctx.ellipse(0, height * 0.15, width, height * 0.5, 0, 0, Math.PI);
+        ctx.quadraticCurveTo(width * 0.5, height * 0.3, 0, height * 0.15);
         ctx.closePath();
         ctx.fillStyle = shellGradient;
         ctx.fill();
@@ -244,9 +230,43 @@ window.PearlClam = class PearlClam {
             const ratio = i * 0.2;
             ctx.beginPath();
             ctx.ellipse(
-                0, 0,
-                width * ratio, height * ratio * 0.4,
-                0, 0, Math.PI * 2
+                0, height * 0.1,
+                width * ratio, height * ratio * 0.3,
+                0, Math.PI * 0.1, Math.PI * 0.9
+            );
+            ctx.stroke();
+        }
+    }
+
+    renderTopShell(ctx, width, height) {
+        const shellGradient = ctx.createRadialGradient(
+            -width * 0.1, -height * 0.1, 0,
+            0, 0, width
+        );
+        shellGradient.addColorStop(0, '#E8DCC8');
+        shellGradient.addColorStop(0.3, '#D4C4A8');
+        shellGradient.addColorStop(0.7, '#C4B090');
+        shellGradient.addColorStop(1, '#A89070');
+        
+        ctx.beginPath();
+        ctx.ellipse(0, -height * 0.15, width, height * 0.5, 0, Math.PI, Math.PI * 2);
+        ctx.quadraticCurveTo(width * 0.5, -height * 0.3, 0, -height * 0.15);
+        ctx.closePath();
+        ctx.fillStyle = shellGradient;
+        ctx.fill();
+        ctx.strokeStyle = '#8B7355';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.strokeStyle = 'rgba(139, 115, 85, 0.3)';
+        ctx.lineWidth = 0.5;
+        for (let i = 1; i <= 4; i++) {
+            const ratio = i * 0.2;
+            ctx.beginPath();
+            ctx.ellipse(
+                0, -height * 0.1,
+                width * ratio, height * ratio * 0.3,
+                0, Math.PI * 1.1, Math.PI * 1.9
             );
             ctx.stroke();
         }
@@ -257,12 +277,12 @@ window.PearlClam = class PearlClam {
             -width * 0.2, 0, 0,
             0, 0, width * 0.6
         );
-        innerGradient.addColorStop(0, 'rgba(255, 245, 230, 0.6)');
+        innerGradient.addColorStop(0, 'rgba(255, 245, 230, 0.5)');
         innerGradient.addColorStop(1, 'rgba(255, 245, 230, 0)');
         
         ctx.beginPath();
         ctx.ellipse(
-            width * 0.3 * direction, 0,
+            width * 0.2, -height * 0.2,
             width * 0.4, height * 0.25,
             0, 0, Math.PI * 2
         );
@@ -271,8 +291,25 @@ window.PearlClam = class PearlClam {
         ctx.restore();
     }
 
+    renderHinge(ctx, shellWidth) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, shellWidth * 0.15, shellWidth * 0.08, 0, 0, Math.PI * 2);
+        const hingeGradient = ctx.createRadialGradient(
+            -shellWidth * 0.05, -shellWidth * 0.03, 0,
+            0, 0, shellWidth * 0.15
+        );
+        hingeGradient.addColorStop(0, '#8B7355');
+        hingeGradient.addColorStop(0.5, '#6B5344');
+        hingeGradient.addColorStop(1, '#4A3728');
+        ctx.fillStyle = hingeGradient;
+        ctx.fill();
+        ctx.strokeStyle = '#3A2718';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
     renderPearl(ctx) {
-        const pearlY = this.size * 0.2;
+        const pearlY = this.size * 0.1;
         const pulseSize = 1 + Math.sin(this.animationPhase * 2) * 0.05;
         const currentPearlSize = this.pearlSize * pulseSize;
         
@@ -404,9 +441,9 @@ window.PearlClamManager = class PearlClamManager {
     spawnClam() {
         if (this.clams.length >= this.maxClams) return;
         
-        const margin = this.maxClams * 1.5;
+        const margin = window.CONFIG.pearlClam.clamSize * 1.5;
         const x = margin + Math.random() * (window.CONFIG.canvasWidth - margin * 2);
-        const y = window.CONFIG.canvasHeight * 0.6 + Math.random() * (window.CONFIG.canvasHeight * 0.3);
+        const y = window.CONFIG.canvasHeight * 0.75 + Math.random() * (window.CONFIG.canvasHeight * 0.2);
         
         const tooClose = this.clams.some(clam => {
             const dx = clam.x - x;
@@ -453,7 +490,7 @@ window.PearlClamManager = class PearlClamManager {
                     totalPearls += pearls;
                     
                     if (this.game && this.game.particleSystem) {
-                        this.game.particleSystem.createPearlCollectEffect(clam.x, clam.y + clam.size * 0.2);
+                        this.game.particleSystem.createPearlCollectEffect(clam.pearlWorldX, clam.pearlWorldY);
                     }
                     
                     window.NotificationManager.show('💎 获得珍珠！', `+${pearls} 珍珠`, 1500);
