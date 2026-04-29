@@ -61,6 +61,11 @@
                     <div class="powerup-duration" id="shieldDuration">--</div>
                 </div>
             </div>
+            
+            <div class="pearl-panel" id="pearlPanel">
+                <div class="pearl-icon">💎</div>
+                <div class="pearl-value" id="hudPearlValue">0</div>
+            </div>
         </div>
 
         <div class="fish-type-panel hidden" id="fishTypePanel">
@@ -338,10 +343,111 @@
             </div>
 
             <div class="action-buttons">
+                <div class="pearl-display" id="homePearlDisplay">
+                    <div class="pearl-icon-large">💎</div>
+                    <div class="pearl-info">
+                        <div class="pearl-label">珍珠</div>
+                        <div class="pearl-value-large" id="homePearlValue">0</div>
+                    </div>
+                </div>
+                <button class="game-button secondary" id="skinShopButton">
+                    <span class="btn-icon">🎨</span>
+                    <span class="btn-text">皮肤商店</span>
+                </button>
                 <button class="game-button primary" id="startButton">
                     <span class="btn-icon">🎮</span>
                     <span class="btn-text">开始游戏</span>
                 </button>
+            </div>
+        </div>
+
+        <div class="game-overlay hidden" id="skinShopOverlay">
+            <div class="overlay-panel skin-shop-panel">
+                <div class="panel-header">
+                    <div class="panel-icon">🎨</div>
+                    <div class="panel-title">皮肤商店</div>
+                    <button class="panel-close" id="skinShopClose">✕</button>
+                </div>
+                <div class="panel-body">
+                    <div class="shop-pearl-info">
+                        <div class="shop-pearl-icon">💎</div>
+                        <span class="shop-pearl-label">当前珍珠:</span>
+                        <span class="shop-pearl-value" id="shopPearlValue">0</span>
+                    </div>
+                    <div class="skin-list" id="skinList">
+                        <div class="skin-item" data-fish="normal" data-skin="moonlight_flow">
+                            <div class="skin-preview">
+                                <canvas class="skin-canvas" id="skinCanvasMoonlight" width="80" height="50"></canvas>
+                            </div>
+                            <div class="skin-info">
+                                <div class="skin-name">月潮流光</div>
+                                <div class="skin-fish">普通鱼专属</div>
+                                <div class="skin-desc">月光下流动的璀璨光芒</div>
+                            </div>
+                            <div class="skin-action">
+                                <div class="skin-price" id="priceMoonlight">
+                                    <span class="price-icon">💎</span>
+                                    <span class="price-value">10</span>
+                                </div>
+                                <button class="skin-btn" id="btnMoonlight">解锁</button>
+                            </div>
+                        </div>
+                        <div class="skin-item" data-fish="whale_shark" data-skin="star_dominator">
+                            <div class="skin-preview">
+                                <canvas class="skin-canvas" id="skinCanvasStar" width="80" height="50"></canvas>
+                            </div>
+                            <div class="skin-info">
+                                <div class="skin-name">星穹霸主</div>
+                                <div class="skin-fish">鲸鲨专属</div>
+                                <div class="skin-desc">深邃星空中的霸主</div>
+                            </div>
+                            <div class="skin-action">
+                                <div class="skin-price" id="priceStar">
+                                    <span class="price-icon">💎</span>
+                                    <span class="price-value">20</span>
+                                </div>
+                                <button class="skin-btn" id="btnStar">解锁</button>
+                            </div>
+                        </div>
+                        <div class="skin-item" data-fish="sword_fish" data-skin="red_blade">
+                            <div class="skin-preview">
+                                <canvas class="skin-canvas" id="skinCanvasRed" width="80" height="50"></canvas>
+                            </div>
+                            <div class="skin-info">
+                                <div class="skin-name">赤锋破浪</div>
+                                <div class="skin-fish">剑鱼专属</div>
+                                <div class="skin-desc">赤红锋刃，破浪前行</div>
+                            </div>
+                            <div class="skin-action">
+                                <div class="skin-price" id="priceRed">
+                                    <span class="price-icon">💎</span>
+                                    <span class="price-value">15</span>
+                                </div>
+                                <button class="skin-btn" id="btnRed">解锁</button>
+                            </div>
+                        </div>
+                        <div class="skin-item" data-fish="puffer_fish" data-skin="gold_guardian">
+                            <div class="skin-preview">
+                                <canvas class="skin-canvas" id="skinCanvasGold" width="80" height="50"></canvas>
+                            </div>
+                            <div class="skin-info">
+                                <div class="skin-name">金珠守卫</div>
+                                <div class="skin-fish">河豚专属</div>
+                                <div class="skin-desc">金色宝珠，坚不可摧</div>
+                            </div>
+                            <div class="skin-action">
+                                <div class="skin-price" id="priceGold">
+                                    <span class="price-icon">💎</span>
+                                    <span class="price-value">15</span>
+                                </div>
+                                <button class="skin-btn" id="btnGold">解锁</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skin-hint">
+                        💡 提示：游戏中收集珍珠，解锁专属皮肤！
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -493,6 +599,7 @@
 
     <script src="js/config.js"></script>
     <script src="js/gameState.js"></script>
+    <script src="js/pearlClamManager.js"></script>
     <script src="js/particles.js"></script>
     <script src="js/fish.js"></script>
     <script src="js/spawnManager.js"></script>

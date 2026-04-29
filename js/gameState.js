@@ -29,6 +29,12 @@ window.GameStatus = {
     customDarkColor: null,
     customLightColor: null,
     
+    pearls: 0,
+    unlockedSkins: {},
+    currentSkin: {},
+    
+    _storageKey: 'ocean_devour_save',
+    
     init: function() {
         this.state = window.GameState.START;
         this.score = 0;
@@ -166,5 +172,103 @@ window.GameStatus = {
     
     isGameOver: function() {
         return this.state === window.GameState.GAME_OVER;
+    },
+    
+    loadSave: function() {
+        try {
+            const saved = localStorage.getItem(this._storageKey);
+            if (saved) {
+                const data = JSON.parse(saved);
+                this.pearls = data.pearls || 0;
+                this.unlockedSkins = data.unlockedSkins || {};
+                this.currentSkin = data.currentSkin || {};
+                console.log('Save loaded:', { pearls: this.pearls, unlockedSkins: this.unlockedSkins, currentSkin: this.currentSkin });
+            }
+        } catch (e) {
+            console.error('Error loading save:', e);
+            this.pearls = 0;
+            this.unlockedSkins = {};
+            this.currentSkin = {};
+        }
+    },
+    
+    saveSave: function() {
+        try {
+            const data = {
+                pearls: this.pearls,
+                unlockedSkins: this.unlockedSkins,
+                currentSkin: this.currentSkin
+            };
+            localStorage.setItem(this._storageKey, JSON.stringify(data));
+            console.log('Save saved:', data);
+        } catch (e) {
+            console.error('Error saving save:', e);
+        }
+    },
+    
+    addPearls: function(amount) {
+        this.pearls += amount;
+        this.saveSave();
+        console.log('Pearls added:', amount, 'Total:', this.pearls);
+    },
+    
+    spendPearls: function(amount) {
+        if (this.pearls >= amount) {
+            this.pearls -= amount;
+            this.saveSave();
+            return true;
+        }
+        return false;
+    },
+    
+    unlockSkin: function(skinId) {
+        this.unlockedSkins[skinId] = true;
+        this.saveSave();
+        console.log('Skin unlocked:', skinId);
+    },
+    
+    isSkinUnlocked: function(skinId) {
+        return this.unlockedSkins[skinId] === true;
+    },
+    
+    setCurrentSkin: function(fishType, skinId) {
+        this.currentSkin[fishType] = skinId;
+        this.saveSave();
+        console.log('Current skin set for', fishType, ':', skinId);
+    },
+    
+    getCurrentSkin: function(fishType) {
+        return this.currentSkin[fishType] || window.SkinId.DEFAULT;
+    },
+    
+    getCurrentSkinConfig: function(fishType) {
+        const skinId = this.getCurrentSkin(fishType);
+        if (skinId === window.SkinId.DEFAULT) {
+            return null;
+        }
+        
+        for (const key in window.CONFIG.skins) {
+            const skin = window.CONFIG.skins[key];
+            if (skin.id === skinId && skin.fishType === fishType) {
+                return skin;
+            }
+        }
+        return null;
+    },
+    
+    isSkinOwned: function(fishType, skinId) {
+        if (skinId === window.SkinId.DEFAULT) {
+            return true;
+        }
+        return this.isSkinUnlocked(skinId);
+    },
+    
+    purchaseSkin: function(skinConfig) {
+        if (this.pearls >= skinConfig.price && !this.isSkinUnlocked(skinConfig.id)) {
+            this.spendPearls(skinConfig.price);
+            this.unlockSkin(skinConfig.id);
+            return true;
+        }
+        return false;
     }
 };

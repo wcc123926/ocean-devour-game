@@ -387,6 +387,95 @@ window.ParticleSystem = class ParticleSystem {
         }
     }
 
+    createPearlCollectEffect(x, y) {
+        for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 / 30) * i;
+            const speed = 2 + Math.random() * 4;
+            this.particles.push(new window.Particle(x, y, '#ffd700', {
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: 4 + Math.random() * 4,
+                lifetime: 600 + Math.random() * 400
+            }));
+        }
+        
+        for (let i = 0; i < 20; i++) {
+            this.particles.push(new window.Particle(x, y, '#fff8e1', {
+                vx: (Math.random() - 0.5) * 6,
+                vy: -2 - Math.random() * 4,
+                ay: 0.1,
+                size: 3 + Math.random() * 3,
+                lifetime: 800 + Math.random() * 400
+            }));
+        }
+        
+        for (let i = 0; i < 15; i++) {
+            this.particles.push(new window.Particle(x, y, '#ffeb3b', {
+                type: 'star',
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                size: 5 + Math.random() * 5,
+                lifetime: 700 + Math.random() * 300
+            }));
+        }
+        
+        for (let i = 0; i < 3; i++) {
+            const delay = i * 100;
+            this.particles.push(new window.Particle(x, y, '#ffd700', {
+                type: 'ring',
+                size: 20 + i * 15,
+                vx: 0,
+                vy: 0,
+                lifetime: 500 + delay,
+                fadeIn: 0.1
+            }));
+        }
+    }
+
+    createClamTrapEffect(x, y) {
+        for (let i = 0; i < 40; i++) {
+            const angle = (Math.PI * 2 / 40) * i;
+            const speed = 4 + Math.random() * 6;
+            this.particles.push(new window.Particle(x, y, '#8B4513', {
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: 6 + Math.random() * 6,
+                lifetime: 800 + Math.random() * 400
+            }));
+        }
+        
+        for (let i = 0; i < 30; i++) {
+            this.particles.push(new window.Particle(x, y, '#d32f2f', {
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() - 0.5) * 10,
+                size: 5 + Math.random() * 5,
+                lifetime: 600 + Math.random() * 400
+            }));
+        }
+        
+        for (let i = 0; i < 20; i++) {
+            this.particles.push(new window.Particle(x, y, '#ff5722', {
+                type: 'star',
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 12,
+                size: 6 + Math.random() * 6,
+                lifetime: 700 + Math.random() * 300
+            }));
+        }
+        
+        for (let i = 0; i < 5; i++) {
+            const delay = i * 80;
+            this.particles.push(new window.Particle(x, y, '#d32f2f', {
+                type: 'ring',
+                size: 30 + i * 20,
+                vx: 0,
+                vy: 0,
+                lifetime: 600 + delay,
+                fadeIn: 0.1
+            }));
+        }
+    }
+
     update(deltaTime) {
         this.particles.forEach((particle, index) => {
             particle.update(deltaTime);

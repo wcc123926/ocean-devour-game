@@ -406,6 +406,329 @@ window.UIManager = {
         this.checkMobileDevice();
         
         this.updateFishDescription('normal');
+        
+        this.initSkinShop();
+    },
+    
+    initSkinShop: function() {
+        const skinShopBtn = document.getElementById('skinShopButton');
+        const skinShopClose = document.getElementById('skinShopClose');
+        const skinShopOverlay = document.getElementById('skinShopOverlay');
+        
+        if (skinShopBtn) {
+            skinShopBtn.addEventListener('click', () => {
+                this.showSkinShop();
+            });
+        }
+        
+        if (skinShopClose) {
+            skinShopClose.addEventListener('click', () => {
+                this.hideSkinShop();
+            });
+        }
+        
+        this.bindSkinButtons();
+        this.updatePearlDisplay();
+    },
+    
+    bindSkinButtons: function() {
+        const skinButtons = document.querySelectorAll('.skin-btn');
+        skinButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const skinItem = e.target.closest('.skin-item');
+                if (!skinItem) return;
+                
+                const fishType = skinItem.dataset.fish;
+                const skinId = skinItem.dataset.skin;
+                this.handleSkinAction(fishType, skinId);
+            });
+        });
+    },
+    
+    handleSkinAction: function(fishType, skinId) {
+        const isUnlocked = window.GameStatus.isSkinUnlocked(skinId);
+        const isSelected = window.GameStatus.getCurrentSkin(fishType) === skinId;
+        
+        if (isUnlocked) {
+            if (isSelected) {
+                window.GameStatus.setCurrentSkin(fishType, null);
+            } else {
+                window.GameStatus.setCurrentSkin(fishType, skinId);
+            }
+        } else {
+            const skinConfig = window.CONFIG.skins[skinId];
+            if (skinConfig && window.GameStatus.pearls >= skinConfig.price) {
+                window.GameStatus.purchaseSkin(skinId);
+                window.NotificationManager.show('🎉 皮肤解锁成功！', `已解锁: ${skinConfig.name}`, 2000);
+            } else {
+                const needed = skinConfig ? skinConfig.price - window.GameStatus.pearls : 0;
+                window.NotificationManager.show('💎 珍珠不足', `还需要 ${needed} 珍珠`, 2000);
+            }
+        }
+        
+        this.updateSkinShopUI();
+        this.updatePearlDisplay();
+    },
+    
+    showSkinShop: function() {
+        const skinShopOverlay = document.getElementById('skinShopOverlay');
+        if (skinShopOverlay) {
+            skinShopOverlay.classList.remove('hidden');
+        }
+        this.updateSkinShopUI();
+        this.updatePearlDisplay();
+        this.drawAllSkinPreviews();
+    },
+    
+    hideSkinShop: function() {
+        const skinShopOverlay = document.getElementById('skinShopOverlay');
+        if (skinShopOverlay) {
+            skinShopOverlay.classList.add('hidden');
+        }
+    },
+    
+    updateSkinShopUI: function() {
+        const skins = window.CONFIG.skins;
+        const skinIds = ['moonlight_flow', 'star_dominator', 'red_blade', 'gold_guardian'];
+        const btnIds = ['btnMoonlight', 'btnStar', 'btnRed', 'btnGold'];
+        const priceIds = ['priceMoonlight', 'priceStar', 'priceRed', 'priceGold'];
+        
+        skinIds.forEach((skinId, index) => {
+            const btn = document.getElementById(btnIds[index]);
+            const priceEl = document.getElementById(priceIds[index]);
+            const skinConfig = skins[skinId];
+            const fishType = skinConfig.fishType;
+            
+            const isUnlocked = window.GameStatus.isSkinUnlocked(skinId);
+            const isSelected = window.GameStatus.getCurrentSkin(fishType) === skinId;
+            const canAfford = window.GameStatus.pearls >= skinConfig.price;
+            
+            if (priceEl) {
+                if (isUnlocked) {
+                    priceEl.style.display = 'none';
+                } else {
+                    priceEl.style.display = 'flex';
+                }
+            }
+            
+            if (btn) {
+                if (isUnlocked) {
+                    if (isSelected) {
+                        btn.textContent = '使用中';
+                        btn.classList.remove('locked', 'purchase');
+                        btn.classList.add('selected');
+                    } else {
+                        btn.textContent = '使用';
+                        btn.classList.remove('locked', 'selected');
+                        btn.classList.add('purchase');
+                    }
+                } else {
+                    btn.textContent = '解锁';
+                    btn.classList.remove('selected');
+                    if (canAfford) {
+                        btn.classList.add('purchase');
+                        btn.classList.remove('locked');
+                    } else {
+                        btn.classList.add('locked');
+                        btn.classList.remove('purchase');
+                    }
+                }
+            }
+        });
+    },
+    
+    drawAllSkinPreviews: function() {
+        const canvasIds = ['skinCanvasMoonlight', 'skinCanvasStar', 'skinCanvasRed', 'skinCanvasGold'];
+        const skinIds = ['moonlight_flow', 'star_dominator', 'red_blade', 'gold_guardian'];
+        const fishTypes = ['normal', 'whale_shark', 'sword_fish', 'puffer_fish'];
+        
+        canvasIds.forEach((canvasId, index) => {
+            const canvas = document.getElementById(canvasId);
+            if (canvas) {
+                const skinConfig = window.CONFIG.skins[skinIds[index]];
+                this.drawSkinPreview(canvas, fishTypes[index], skinConfig);
+            }
+        });
+    },
+    
+    drawSkinPreview: function(canvas, fishType, skinConfig) {
+        if (!canvas || !skinConfig) return;
+        
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const scale = Math.min(w, h) / 60;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        const colors = skinConfig.colors;
+        
+        const bodyGradient = ctx.createRadialGradient(
+            cx - 8 * scale, cy - 5 * scale, 0,
+            cx, cy, 18 * scale
+        );
+        bodyGradient.addColorStop(0, colors.lightColor);
+        bodyGradient.addColorStop(0.7, colors.bodyColor);
+        bodyGradient.addColorStop(1, colors.darkColor);
+        
+        switch (fishType) {
+            case 'sword_fish':
+                this.drawSwordFishSkinPreview(ctx, cx, cy, scale, bodyGradient, colors);
+                break;
+            case 'whale_shark':
+                this.drawWhaleSharkSkinPreview(ctx, cx, cy, scale, bodyGradient, colors);
+                break;
+            case 'puffer_fish':
+                this.drawPufferFishSkinPreview(ctx, cx, cy, scale, bodyGradient, colors);
+                break;
+            default:
+                this.drawNormalFishSkinPreview(ctx, cx, cy, scale, bodyGradient, colors);
+        }
+        
+        const glowSize = 25 * scale;
+        const glowGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowSize);
+        glowGradient.addColorStop(0, colors.glowColor + '40');
+        glowGradient.addColorStop(0.5, colors.glowColor + '20');
+        glowGradient.addColorStop(1, colors.glowColor + '00');
+        
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.beginPath();
+        ctx.arc(cx, cy, glowSize, 0, Math.PI * 2);
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+        ctx.restore();
+    },
+    
+    drawNormalFishSkinPreview: function(ctx, cx, cy, scale, gradient, colors) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 14 * scale, 9 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = colors.darkColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        this.drawFishTailPreview(ctx, cx, cy, scale, colors);
+        this.drawFishEyePreview(ctx, cx + 8 * scale, cy - 3 * scale, scale, colors);
+    },
+    
+    drawSwordFishSkinPreview: function(ctx, cx, cy, scale, gradient, colors) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 15 * scale, 7 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = colors.darkColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(cx + 12 * scale, cy);
+        ctx.lineTo(cx + 28 * scale, cy);
+        ctx.strokeStyle = colors.darkColor;
+        ctx.lineWidth = 2 * scale;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        
+        this.drawFishTailPreview(ctx, cx, cy, scale, colors);
+        this.drawFishEyePreview(ctx, cx + 6 * scale, cy - 2 * scale, scale, colors);
+    },
+    
+    drawWhaleSharkSkinPreview: function(ctx, cx, cy, scale, gradient, colors) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 16 * scale, 10 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = colors.darkColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        const spots = [
+            [-5, -3], [3, -4], [6, 2], [-6, 3], [1, 4], [-2, -1]
+        ];
+        spots.forEach(pos => {
+            ctx.beginPath();
+            ctx.arc(cx + pos[0] * scale, cy + pos[1] * scale, 1.5 * scale, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        this.drawFishTailPreview(ctx, cx, cy, scale, colors);
+        this.drawFishEyePreview(ctx, cx + 9 * scale, cy - 3 * scale, scale, colors);
+    },
+    
+    drawPufferFishSkinPreview: function(ctx, cx, cy, scale, gradient, colors) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, 12 * scale, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = colors.darkColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        const spikeCount = 8;
+        for (let i = 0; i < spikeCount; i++) {
+            const angle = (Math.PI * 2 / spikeCount) * i;
+            const innerX = cx + Math.cos(angle) * 10 * scale;
+            const innerY = cy + Math.sin(angle) * 10 * scale;
+            const outerX = cx + Math.cos(angle) * 14 * scale;
+            const outerY = cy + Math.sin(angle) * 14 * scale;
+            
+            ctx.beginPath();
+            ctx.moveTo(innerX - Math.cos(angle + 0.3) * 2 * scale, innerY - Math.sin(angle + 0.3) * 2 * scale);
+            ctx.lineTo(outerX, outerY);
+            ctx.lineTo(innerX - Math.cos(angle - 0.3) * 2 * scale, innerY - Math.sin(angle - 0.3) * 2 * scale);
+            ctx.closePath();
+            ctx.fillStyle = colors.darkColor;
+            ctx.fill();
+        }
+        
+        this.drawFishEyePreview(ctx, cx + 5 * scale, cy - 3 * scale, scale, colors);
+    },
+    
+    drawFishTailPreview: function(ctx, cx, cy, scale, colors) {
+        ctx.fillStyle = colors.lightColor;
+        ctx.beginPath();
+        ctx.moveTo(cx - 12 * scale, cy);
+        ctx.quadraticCurveTo(cx - 20 * scale, cy - 7 * scale, cx - 24 * scale, cy - 5 * scale);
+        ctx.quadraticCurveTo(cx - 22 * scale, cy, cx - 24 * scale, cy + 5 * scale);
+        ctx.quadraticCurveTo(cx - 20 * scale, cy + 7 * scale, cx - 12 * scale, cy);
+        ctx.closePath();
+        ctx.fill();
+    },
+    
+    drawFishEyePreview: function(ctx, x, y, scale, colors) {
+        const eyeSize = 2.5 * scale;
+        
+        const eyeGradient = ctx.createRadialGradient(x, y, 0, x, y, eyeSize);
+        eyeGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        eyeGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.9)');
+        eyeGradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+        
+        ctx.beginPath();
+        ctx.arc(x, y, eyeSize, 0, Math.PI * 2);
+        ctx.fillStyle = eyeGradient;
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(x + eyeSize * 0.3, y, eyeSize * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#333';
+        ctx.fill();
+    },
+    
+    updatePearlDisplay: function() {
+        const homePearlValue = document.getElementById('homePearlValue');
+        const hudPearlValue = document.getElementById('hudPearlValue');
+        const shopPearlValue = document.getElementById('shopPearlValue');
+        
+        if (homePearlValue) homePearlValue.textContent = window.GameStatus.pearls;
+        if (hudPearlValue) hudPearlValue.textContent = window.GameStatus.pearls;
+        if (shopPearlValue) shopPearlValue.textContent = window.GameStatus.pearls;
     },
     
     bindDifficultySelector: function() {
@@ -669,6 +992,12 @@ window.UIManager = {
                 } catch (e) {
                     console.error('Error in checkStageUp:', e);
                 }
+            }
+            
+            try {
+                this.updatePearlDisplay();
+            } catch (e) {
+                console.error('Error updating pearl display:', e);
             }
         } catch (e) {
             console.error('Error in updateUI:', e);
@@ -1256,6 +1585,9 @@ window.UIManager = {
             } else if (window.GameStatus.deathCause === window.DeathCause.EATEN) {
                 reasonText = `最高达到: ${stageName}，被更大的鱼吃掉了！`;
                 deathCauseText = '🐟 死亡原因：被大鱼吃掉';
+            } else if (window.GameStatus.deathCause === window.DeathCause.CLAM_TRAP) {
+                reasonText = `最高达到: ${stageName}，被珍珠蚌夹住了！`;
+                deathCauseText = '🦪 死亡原因：被珍珠蚌夹死(护盾无效)';
             } else {
                 reasonText = `最高达到: ${stageName}`;
                 deathCauseText = '';
@@ -1471,6 +1803,10 @@ window.Renderer = {
 
         if (game.explosionManager) {
             game.explosionManager.render(ctx);
+        }
+
+        if (game.pearlClamManager) {
+            game.pearlClamManager.render(ctx);
         }
 
         if (game.spawnManager) {

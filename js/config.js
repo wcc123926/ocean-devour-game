@@ -13,7 +13,16 @@ window.ControlMode = {
 window.DeathCause = {
     EATEN: 'eaten',
     EXPLOSION: 'explosion',
+    CLAM_TRAP: 'clam_trap',
     UNKNOWN: 'unknown'
+};
+
+window.SkinId = {
+    DEFAULT: 'default',
+    MOONLIGHT_FLOW: 'moonlight_flow',
+    STAR_DOMINATOR: 'star_dominator',
+    RED_BLADE: 'red_blade',
+    GOLD_GUARDIAN: 'gold_guardian'
 };
 
 window.FishType = {
@@ -142,6 +151,75 @@ window.CONFIG = {
     minRadius: 100,
     maxRadius: 200,
     warningPulseRate: 0.5
+  },
+
+  pearlClam: {
+    enabled: true,
+    minInterval: 20000,
+    maxInterval: 40000,
+    openDuration: 5000,
+    warningDuration: 1500,
+    maxClams: 2,
+    clamSize: 60,
+    pearlSize: 15,
+    pearlValue: 1,
+    trapRadius: 40,
+    spawnChance: 0.002
+  },
+
+  skins: {
+    moonlight_flow: {
+      id: window.SkinId.MOONLIGHT_FLOW,
+      name: '月潮流光',
+      fishType: window.FishType.NORMAL,
+      price: 10,
+      description: '普通鱼专属皮肤 - 月光下流动的璀璨光芒',
+      colors: {
+        bodyColor: '#e0f2f1',
+        darkColor: '#00897b',
+        lightColor: '#b2dfdb',
+        glowColor: '#4db6ac'
+      }
+    },
+    star_dominator: {
+      id: window.SkinId.STAR_DOMINATOR,
+      name: '星穹霸主',
+      fishType: window.FishType.WHALE_SHARK,
+      price: 20,
+      description: '鲸鲨专属皮肤 - 深邃星空中的霸主',
+      colors: {
+        bodyColor: '#1a237e',
+        darkColor: '#0d1442',
+        lightColor: '#3f51b5',
+        glowColor: '#7c4dff'
+      }
+    },
+    red_blade: {
+      id: window.SkinId.RED_BLADE,
+      name: '赤锋破浪',
+      fishType: window.FishType.SWORD_FISH,
+      price: 15,
+      description: '剑鱼专属皮肤 - 赤红锋刃，破浪前行',
+      colors: {
+        bodyColor: '#d32f2f',
+        darkColor: '#b71c1c',
+        lightColor: '#ef5350',
+        glowColor: '#ff5252'
+      }
+    },
+    gold_guardian: {
+      id: window.SkinId.GOLD_GUARDIAN,
+      name: '金珠守卫',
+      fishType: window.FishType.PUFFER_FISH,
+      price: 15,
+      description: '河豚专属皮肤 - 金色宝珠，坚不可摧',
+      colors: {
+        bodyColor: '#ffd54f',
+        darkColor: '#f9a825',
+        lightColor: '#ffecb3',
+        glowColor: '#ffab00'
+      }
+    }
   },
 
   fishTypes: {
