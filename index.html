@@ -363,88 +363,98 @@
 
         <div class="game-overlay hidden" id="skinShopOverlay">
             <div class="overlay-panel skin-shop-panel">
-                <div class="panel-header">
-                    <div class="panel-icon">🎨</div>
-                    <div class="panel-title">皮肤商店</div>
-                    <button class="panel-close" id="skinShopClose">✕</button>
+                <div class="skin-shop-header">
+                    <div class="skin-shop-title-section">
+                        <div class="skin-shop-icon">🎨</div>
+                        <div class="skin-shop-title">皮肤商店</div>
+                    </div>
+                    <div class="skin-shop-pearl-section">
+                        <div class="skin-shop-pearl-icon">💎</div>
+                        <span class="skin-shop-pearl-label">当前珍珠:</span>
+                        <span class="skin-shop-pearl-value" id="shopPearlValue">0</span>
+                    </div>
+                    <button class="skin-shop-close" id="skinShopClose">✕</button>
                 </div>
-                <div class="panel-body">
-                    <div class="shop-pearl-info">
-                        <div class="shop-pearl-icon">💎</div>
-                        <span class="shop-pearl-label">当前珍珠:</span>
-                        <span class="shop-pearl-value" id="shopPearlValue">0</span>
+                <div class="skin-shop-content">
+                    <div class="skin-grid" id="skinList">
+                        <div class="skin-card" data-fish="normal" data-skin="moonlight_flow">
+                            <div class="skin-card-preview">
+                                <canvas class="skin-card-canvas" id="skinCanvasMoonlight" width="120" height="70"></canvas>
+                            </div>
+                            <div class="skin-card-info">
+                                <div class="skin-card-name-row">
+                                    <div class="skin-card-name">月潮流光</div>
+                                    <div class="skin-card-fish">普通鱼专属</div>
+                                </div>
+                                <div class="skin-card-desc">月光下流动的璀璨光芒</div>
+                            </div>
+                            <div class="skin-card-action">
+                                <div class="skin-card-price" id="priceMoonlight">
+                                    <span class="skin-card-price-icon">💎</span>
+                                    <span class="skin-card-price-value">10</span>
+                                </div>
+                                <button class="skin-card-btn" id="btnMoonlight">解锁</button>
+                            </div>
+                        </div>
+                        <div class="skin-card" data-fish="whale_shark" data-skin="star_dominator">
+                            <div class="skin-card-preview">
+                                <canvas class="skin-card-canvas" id="skinCanvasStar" width="120" height="70"></canvas>
+                            </div>
+                            <div class="skin-card-info">
+                                <div class="skin-card-name-row">
+                                    <div class="skin-card-name">星穹霸主</div>
+                                    <div class="skin-card-fish">鲸鲨专属</div>
+                                </div>
+                                <div class="skin-card-desc">深邃星空中的霸主</div>
+                            </div>
+                            <div class="skin-card-action">
+                                <div class="skin-card-price" id="priceStar">
+                                    <span class="skin-card-price-icon">💎</span>
+                                    <span class="skin-card-price-value">20</span>
+                                </div>
+                                <button class="skin-card-btn" id="btnStar">解锁</button>
+                            </div>
+                        </div>
+                        <div class="skin-card" data-fish="sword_fish" data-skin="red_blade">
+                            <div class="skin-card-preview">
+                                <canvas class="skin-card-canvas" id="skinCanvasRed" width="120" height="70"></canvas>
+                            </div>
+                            <div class="skin-card-info">
+                                <div class="skin-card-name-row">
+                                    <div class="skin-card-name">赤锋破浪</div>
+                                    <div class="skin-card-fish">剑鱼专属</div>
+                                </div>
+                                <div class="skin-card-desc">赤红锋刃，破浪前行</div>
+                            </div>
+                            <div class="skin-card-action">
+                                <div class="skin-card-price" id="priceRed">
+                                    <span class="skin-card-price-icon">💎</span>
+                                    <span class="skin-card-price-value">15</span>
+                                </div>
+                                <button class="skin-card-btn" id="btnRed">解锁</button>
+                            </div>
+                        </div>
+                        <div class="skin-card" data-fish="puffer_fish" data-skin="gold_guardian">
+                            <div class="skin-card-preview">
+                                <canvas class="skin-card-canvas" id="skinCanvasGold" width="120" height="70"></canvas>
+                            </div>
+                            <div class="skin-card-info">
+                                <div class="skin-card-name-row">
+                                    <div class="skin-card-name">金珠守卫</div>
+                                    <div class="skin-card-fish">河豚专属</div>
+                                </div>
+                                <div class="skin-card-desc">金色宝珠，坚不可摧</div>
+                            </div>
+                            <div class="skin-card-action">
+                                <div class="skin-card-price" id="priceGold">
+                                    <span class="skin-card-price-icon">💎</span>
+                                    <span class="skin-card-price-value">15</span>
+                                </div>
+                                <button class="skin-card-btn" id="btnGold">解锁</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="skin-list" id="skinList">
-                        <div class="skin-item" data-fish="normal" data-skin="moonlight_flow">
-                            <div class="skin-preview">
-                                <canvas class="skin-canvas" id="skinCanvasMoonlight" width="80" height="50"></canvas>
-                            </div>
-                            <div class="skin-info">
-                                <div class="skin-name">月潮流光</div>
-                                <div class="skin-fish">普通鱼专属</div>
-                                <div class="skin-desc">月光下流动的璀璨光芒</div>
-                            </div>
-                            <div class="skin-action">
-                                <div class="skin-price" id="priceMoonlight">
-                                    <span class="price-icon">💎</span>
-                                    <span class="price-value">10</span>
-                                </div>
-                                <button class="skin-btn" id="btnMoonlight">解锁</button>
-                            </div>
-                        </div>
-                        <div class="skin-item" data-fish="whale_shark" data-skin="star_dominator">
-                            <div class="skin-preview">
-                                <canvas class="skin-canvas" id="skinCanvasStar" width="80" height="50"></canvas>
-                            </div>
-                            <div class="skin-info">
-                                <div class="skin-name">星穹霸主</div>
-                                <div class="skin-fish">鲸鲨专属</div>
-                                <div class="skin-desc">深邃星空中的霸主</div>
-                            </div>
-                            <div class="skin-action">
-                                <div class="skin-price" id="priceStar">
-                                    <span class="price-icon">💎</span>
-                                    <span class="price-value">20</span>
-                                </div>
-                                <button class="skin-btn" id="btnStar">解锁</button>
-                            </div>
-                        </div>
-                        <div class="skin-item" data-fish="sword_fish" data-skin="red_blade">
-                            <div class="skin-preview">
-                                <canvas class="skin-canvas" id="skinCanvasRed" width="80" height="50"></canvas>
-                            </div>
-                            <div class="skin-info">
-                                <div class="skin-name">赤锋破浪</div>
-                                <div class="skin-fish">剑鱼专属</div>
-                                <div class="skin-desc">赤红锋刃，破浪前行</div>
-                            </div>
-                            <div class="skin-action">
-                                <div class="skin-price" id="priceRed">
-                                    <span class="price-icon">💎</span>
-                                    <span class="price-value">15</span>
-                                </div>
-                                <button class="skin-btn" id="btnRed">解锁</button>
-                            </div>
-                        </div>
-                        <div class="skin-item" data-fish="puffer_fish" data-skin="gold_guardian">
-                            <div class="skin-preview">
-                                <canvas class="skin-canvas" id="skinCanvasGold" width="80" height="50"></canvas>
-                            </div>
-                            <div class="skin-info">
-                                <div class="skin-name">金珠守卫</div>
-                                <div class="skin-fish">河豚专属</div>
-                                <div class="skin-desc">金色宝珠，坚不可摧</div>
-                            </div>
-                            <div class="skin-action">
-                                <div class="skin-price" id="priceGold">
-                                    <span class="price-icon">💎</span>
-                                    <span class="price-value">15</span>
-                                </div>
-                                <button class="skin-btn" id="btnGold">解锁</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="skin-hint">
+                    <div class="skin-shop-footer">
                         💡 提示：游戏中收集珍珠，解锁专属皮肤！
                     </div>
                 </div>
