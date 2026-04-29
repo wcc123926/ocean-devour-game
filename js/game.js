@@ -362,6 +362,11 @@ window.Game = class Game {
     }
 
     start() {
+        const warningElement = document.getElementById('explosionWarning');
+        if (warningElement) {
+            warningElement.classList.add('hidden');
+        }
+        
         window.GameStatus.reset();
         
         const fishConfig = window.GameStatus.getSelectedFishConfig();
