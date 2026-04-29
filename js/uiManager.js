@@ -432,10 +432,10 @@ window.UIManager = {
     },
     
     bindSkinButtons: function() {
-        const skinButtons = document.querySelectorAll('.skin-btn');
+        const skinButtons = document.querySelectorAll('.skin-card-btn');
         skinButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const skinItem = e.target.closest('.skin-item');
+                const skinItem = e.target.closest('.skin-card');
                 if (!skinItem) return;
                 
                 const fishType = skinItem.dataset.fish;
@@ -499,9 +499,20 @@ window.UIManager = {
             const skinConfig = skins[skinId];
             const fishType = skinConfig.fishType;
             
+            const skinCard = btn ? btn.closest('.skin-card') : null;
+            
             const isUnlocked = window.GameStatus.isSkinUnlocked(skinId);
             const isSelected = window.GameStatus.getCurrentSkin(fishType) === skinId;
             const canAfford = window.GameStatus.pearls >= skinConfig.price;
+            
+            if (skinCard) {
+                skinCard.classList.remove('selected', 'unlocked');
+                if (isSelected) {
+                    skinCard.classList.add('selected');
+                } else if (isUnlocked) {
+                    skinCard.classList.add('unlocked');
+                }
+            }
             
             if (priceEl) {
                 if (isUnlocked) {
@@ -512,25 +523,22 @@ window.UIManager = {
             }
             
             if (btn) {
+                btn.classList.remove('locked', 'purchase', 'selected', 'use');
+                
                 if (isUnlocked) {
                     if (isSelected) {
                         btn.textContent = '使用中';
-                        btn.classList.remove('locked', 'purchase');
                         btn.classList.add('selected');
                     } else {
                         btn.textContent = '使用';
-                        btn.classList.remove('locked', 'selected');
-                        btn.classList.add('purchase');
+                        btn.classList.add('use');
                     }
                 } else {
                     btn.textContent = '解锁';
-                    btn.classList.remove('selected');
                     if (canAfford) {
                         btn.classList.add('purchase');
-                        btn.classList.remove('locked');
                     } else {
                         btn.classList.add('locked');
-                        btn.classList.remove('purchase');
                     }
                 }
             }
